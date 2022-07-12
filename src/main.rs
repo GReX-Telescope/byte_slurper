@@ -58,11 +58,11 @@ fn main() -> std::io::Result<()> {
                 "Rate - {} Gb/s",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8
             );
-            let mut wtr = csv::Writer::from_writer(io::stdout());
-            wtr.write_record(spectra.map(|e| e.to_string()))?;
-            wtr.flush()?;
+            // let mut wtr = csv::Writer::from_writer(io::stdout());
+            // wtr.write_record(spectra.map(|e| e.to_string()))?;
+            // wtr.flush()?;
             // Bail
-            process::exit(0);
+            //process::exit(0);
         }
     }
 }
