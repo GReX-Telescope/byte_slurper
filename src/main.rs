@@ -60,6 +60,7 @@ fn main() -> std::io::Result<()> {
             );
             let mut wtr = csv::Writer::from_writer(io::stdout());
             wtr.write_record(spectra.map(|e| e.to_string()))?;
+            wtr.flush()?;
             // Bail
             process::exit(0);
         }
