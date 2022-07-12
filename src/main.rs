@@ -11,7 +11,7 @@ fn main() -> std::io::Result<()> {
         cnt += 1;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
             last_reported = Instant::now();
-            println!("{cnt} - Payloads");
+            println!("{} - Payloads", cnt);
         }
     }
 }
