@@ -9,7 +9,6 @@ fn main() -> std::io::Result<()> {
     loop {
         socket.recv(&mut buf)?;
         cnt += 1;
-        println!("{}", cnt);
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
             last_reported = Instant::now();
             println!("{} - Payloads", cnt);
