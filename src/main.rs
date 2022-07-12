@@ -24,7 +24,7 @@ fn main() -> std::io::Result<()> {
     let mut spectra = [0f32; 2048];
 
     // Setup FFT
-    let fft = Radix4::new(4096, FftDirection::Forward);
+    let fft = Radix4::new(2048, FftDirection::Forward);
 
     loop {
         // Grab incoming data
