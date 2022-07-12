@@ -45,7 +45,7 @@ fn main() -> std::io::Result<()> {
         let channelized_b: [Complex<f32>; 2048] = channelize(&pol_b_time_series, &fft);
 
         // Convert to power and add to spectra
-        for i in 0..=spectra.len() {
+        for i in 0..spectra.len() {
             spectra[i] = channelized_a[i].norm() + channelized_b[i].norm();
         }
 
