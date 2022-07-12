@@ -14,7 +14,7 @@ fn main() -> std::io::Result<()> {
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
             last_reported = Instant::now();
             println!(
-                "Rate - {} GB/s",
+                "Rate - {} Gb/s",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8
             );
         }
