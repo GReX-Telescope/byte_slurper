@@ -24,7 +24,7 @@ fn main() -> std::io::Result<()> {
     let mut spectra = [0f32; 2048];
 
     // Setup FFT
-    // let fft = Radix4::new(2048, FftDirection::Forward);
+    let fft = Radix4::new(2048, FftDirection::Forward);
 
     loop {
         // Grab incoming data
@@ -41,13 +41,13 @@ fn main() -> std::io::Result<()> {
         }
 
         // Channelize
-        // let channelized_a: [Complex<f32>; 2048] = channelize(&pol_a_time_series, &fft);
-        // let channelized_b: [Complex<f32>; 2048] = channelize(&pol_b_time_series, &fft);
+        let channelized_a: [Complex<f32>; 2048] = channelize(&pol_a_time_series, &fft);
+        let channelized_b: [Complex<f32>; 2048] = channelize(&pol_b_time_series, &fft);
 
-        // // Convert to power and add to spectra
-        // for i in 0..spectra.len() {
-        //     spectra[i] = channelized_a[i].norm() + channelized_b[i].norm();
-        // }
+        // Convert to power and add to spectra
+        for i in 0..spectra.len() {
+            spectra[i] = channelized_a[i].norm() + channelized_b[i].norm();
+        }
 
         // Metrics
         cnt += PAYLOAD_SIZE;

@@ -28,11 +28,11 @@ where
     // TODO!
     // Fold
     let mut folded = [Default::default(); N];
-    for chunk in input.chunks_exact(taps) {
-        for i in 0..chunk.len() {
-            folded[i] += Complex::<T>::from_u8(chunk[i]).unwrap();
-        }
-    }
+    // for chunk in input.chunks_exact(taps) {
+    //     for i in 0..chunk.len() {
+    //         folded[i] += Complex::<T>::from_u8(chunk[i]).unwrap();
+    //     }
+    // }
     // FFT
     fft.process(&mut folded);
     // Return
