@@ -1,13 +1,13 @@
-mod f_engine;
-
-use f_engine::channelize;
-use rustfft::{algorithm::Radix4, num_complex::Complex, FftDirection};
 use std::net::UdpSocket;
 use std::time::Instant;
-use std::{io, process};
+
+use num_complex::Complex;
 
 const PAYLOAD_SIZE: usize = 8192;
 const WORD_SIZE: usize = 8;
+const CHANNELS: usize = 2048;
+
+type ComplexByte = Complex<u8>;
 
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
@@ -17,14 +17,10 @@ fn main() -> std::io::Result<()> {
     let mut last_reported = Instant::now();
     let program_start = Instant::now();
 
-    // Sample time is 2ns (AHHHHHHH)
-    let mut pol_a_time_series = [0u8; PAYLOAD_SIZE * 2];
-    let mut pol_b_time_series = [0u8; PAYLOAD_SIZE * 2];
+    let mut pol_a_spectra = [ComplexByte::default(); CHANNELS];
+    let mut pol_b_spectra = [ComplexByte::default(); CHANNELS];
 
-    let mut spectra = [0f32; 2048];
-
-    // Setup FFT
-    let fft = Radix4::new(2048, FftDirection::Forward);
+    let mut total_power_spectra = [0f32; CHANNELS];
 
     loop {
         // Grab incoming data
@@ -32,21 +28,43 @@ fn main() -> std::io::Result<()> {
 
         // Extract time series
         for (i, word) in buf.chunks_exact(WORD_SIZE).enumerate() {
-            // Top of word is all zeros (for now)
-            // Bottom of word is a(t1), a(t0), b(t1), b(t0)
-            pol_b_time_series[2 * i] = word[0];
-            pol_b_time_series[2 * i + 1] = word[1];
-            pol_a_time_series[2 * i] = word[2];
-            pol_a_time_series[2 * i + 1] = word[3];
+            // Each word contains two frequencies for each polarization
+            // [A1 B1 A2 B2]
+            // Where each channel is [Re Im]
+            let a1 = ComplexByte {
+                re: word[7],
+                im: word[6],
+            };
+            let a2 = ComplexByte {
+                re: word[5],
+                im: word[4],
+            };
+            let b1 = ComplexByte {
+                re: word[3],
+                im: word[2],
+            };
+            let b2 = ComplexByte {
+                re: word[1],
+                im: word[0],
+            };
+            // Update spectra
+            pol_a_spectra[2 * i] = a1;
+            pol_a_spectra[2 * i + 1] = a2;
+            pol_b_spectra[2 * i] = b1;
+            pol_b_spectra[2 * i + 1] = b2;
         }
 
-        // Channelize
-        let channelized_a: [Complex<f32>; 2048] = channelize(&pol_a_time_series, &fft);
-        let channelized_b: [Complex<f32>; 2048] = channelize(&pol_b_time_series, &fft);
-
         // Convert to power and add to spectra
-        for i in 0..spectra.len() {
-            spectra[i] = channelized_a[i].norm() + channelized_b[i].norm();
+        for i in 0..CHANNELS {
+            let pol_a_float = Complex::new(
+                pol_a_spectra[i].re as f32 / 255_f32,
+                pol_a_spectra[i].im as f32 / 255_f32,
+            );
+            let pol_b_float = Complex::new(
+                pol_b_spectra[i].re as f32 / 255_f32,
+                pol_b_spectra[i].im as f32 / 255_f32,
+            );
+            total_power_spectra[i] = pol_a_float.norm() + pol_b_float.norm();
         }
 
         // Metrics
