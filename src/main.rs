@@ -69,7 +69,7 @@ fn main() -> std::io::Result<()> {
         // Grab incoming data
         socket.recv(&mut buf)?;
         let (pol_a, pol_b) = payload_to_spectra(&buf);
-        let _spectra = total_power_spectra(&pol_a, &pol_b);
+        // let _spectra = total_power_spectra(&pol_a, &pol_b);
         // Metrics
         cnt += PAYLOAD_SIZE;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
