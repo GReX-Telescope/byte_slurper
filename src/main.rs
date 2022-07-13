@@ -9,6 +9,19 @@ const CHANNELS: usize = 2048;
 
 type ComplexByte = Complex<u8>;
 
+fn total_power_spectra<const N: usize>(
+    pol_a: [ComplexByte; N],
+    pol_b: [ComplexByte; N],
+) -> [f32; N] {
+    let mut spectra = [0f32; N];
+    for i in 0..N {
+        let pol_a_float = Complex::new(pol_a[i].re as f32 / 255_f32, pol_a[i].im as f32 / 255_f32);
+        let pol_b_float = Complex::new(pol_b[i].re as f32 / 255_f32, pol_b[i].im as f32 / 255_f32);
+        spectra[i] = pol_a_float.norm() + pol_b_float.norm();
+    }
+    spectra
+}
+
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
@@ -17,10 +30,10 @@ fn main() -> std::io::Result<()> {
     let mut last_reported = Instant::now();
     let program_start = Instant::now();
 
-    let mut pol_a_spectra = [ComplexByte::default(); CHANNELS];
-    let mut pol_b_spectra = [ComplexByte::default(); CHANNELS];
+    let mut pol_a = [ComplexByte::default(); CHANNELS];
+    let mut pol_b = [ComplexByte::default(); CHANNELS];
 
-    let mut total_power_spectra = [0f32; CHANNELS];
+    let mut spectra = [0f32; CHANNELS];
 
     loop {
         // Grab incoming data
@@ -48,29 +61,13 @@ fn main() -> std::io::Result<()> {
                 im: word[0],
             };
             // Update spectra
-            pol_a_spectra[2 * i] = a1;
-            pol_a_spectra[2 * i + 1] = a2;
-            pol_b_spectra[2 * i] = b1;
-            pol_b_spectra[2 * i + 1] = b2;
+            pol_a[2 * i] = a1;
+            pol_a[2 * i + 1] = a2;
+            pol_b[2 * i] = b1;
+            pol_b[2 * i + 1] = b2;
         }
 
-        // Help out the compiler
-        assert!(pol_a_spectra.len() == CHANNELS);
-        assert!(pol_b_spectra.len() == CHANNELS);
-        assert!(total_power_spectra.len() == CHANNELS);
-        // Convert to power and add to spectra
-        for i in 0..CHANNELS {
-            let pol_a_float = Complex::new(
-                pol_a_spectra[i].re as f32 / 255_f32,
-                pol_a_spectra[i].im as f32 / 255_f32,
-            );
-            let pol_b_float = Complex::new(
-                pol_b_spectra[i].re as f32 / 255_f32,
-                pol_b_spectra[i].im as f32 / 255_f32,
-            );
-            total_power_spectra[i] = pol_a_float.norm() + pol_b_float.norm();
-        }
-
+        spectra = total_power_spectra(pol_a, pol_b);
         // Metrics
         cnt += PAYLOAD_SIZE;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
