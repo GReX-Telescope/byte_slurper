@@ -22,6 +22,41 @@ fn total_power_spectra<const N: usize>(
     spectra
 }
 
+fn payload_to_spectra(
+    payload: [u8; PAYLOAD_SIZE],
+) -> ([ComplexByte; CHANNELS], [ComplexByte; CHANNELS]) {
+    assert_eq!(PAYLOAD_SIZE, CHANNELS * 4);
+    let mut pol_a = [ComplexByte::default(); CHANNELS];
+    let mut pol_b = [ComplexByte::default(); CHANNELS];
+    for (i, word) in payload.chunks_exact(WORD_SIZE).enumerate() {
+        // Each word contains two frequencies for each polarization
+        // [A1 B1 A2 B2]
+        // Where each channel is [Re Im]
+        let a1 = ComplexByte {
+            re: word[7],
+            im: word[6],
+        };
+        let a2 = ComplexByte {
+            re: word[5],
+            im: word[4],
+        };
+        let b1 = ComplexByte {
+            re: word[3],
+            im: word[2],
+        };
+        let b2 = ComplexByte {
+            re: word[1],
+            im: word[0],
+        };
+        // Update spectra
+        pol_a[2 * i] = a1;
+        pol_a[2 * i + 1] = a2;
+        pol_b[2 * i] = b1;
+        pol_b[2 * i + 1] = b2;
+    }
+    (pol_a, pol_b)
+}
+
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
@@ -30,44 +65,11 @@ fn main() -> std::io::Result<()> {
     let mut last_reported = Instant::now();
     let program_start = Instant::now();
 
-    let mut pol_a = [ComplexByte::default(); CHANNELS];
-    let mut pol_b = [ComplexByte::default(); CHANNELS];
-
-    let mut spectra = [0f32; CHANNELS];
-
     loop {
         // Grab incoming data
         socket.recv(&mut buf)?;
-
-        // Extract time series
-        for (i, word) in buf.chunks_exact(WORD_SIZE).enumerate() {
-            // Each word contains two frequencies for each polarization
-            // [A1 B1 A2 B2]
-            // Where each channel is [Re Im]
-            let a1 = ComplexByte {
-                re: word[7],
-                im: word[6],
-            };
-            let a2 = ComplexByte {
-                re: word[5],
-                im: word[4],
-            };
-            let b1 = ComplexByte {
-                re: word[3],
-                im: word[2],
-            };
-            let b2 = ComplexByte {
-                re: word[1],
-                im: word[0],
-            };
-            // Update spectra
-            pol_a[2 * i] = a1;
-            pol_a[2 * i + 1] = a2;
-            pol_b[2 * i] = b1;
-            pol_b[2 * i + 1] = b2;
-        }
-
-        spectra = total_power_spectra(pol_a, pol_b);
+        let (pol_a, pol_b) = payload_to_spectra(buf);
+        let _spectra = total_power_spectra(pol_a, pol_b);
         // Metrics
         cnt += PAYLOAD_SIZE;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
