@@ -16,7 +16,7 @@ fn main() -> std::io::Result<()> {
     loop {
         // Grab incoming data
         socket.recv(&mut buf)?;
-        payload_to_spectra(&buf, &mut pol_a, &mut pol_b);
+        // payload_to_spectra(&buf, &mut pol_a, &mut pol_b);
         // let _spectra = total_power_spectra(&pol_a, &pol_b);
         // Metrics
         cnt += PAYLOAD_SIZE;
