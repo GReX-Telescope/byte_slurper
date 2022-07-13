@@ -55,17 +55,17 @@ fn main() -> std::io::Result<()> {
         }
 
         // Convert to power and add to spectra
-        for i in 0..CHANNELS {
-            let pol_a_float = Complex::new(
-                pol_a_spectra[i].re as f32 / 255_f32,
-                pol_a_spectra[i].im as f32 / 255_f32,
-            );
-            let pol_b_float = Complex::new(
-                pol_b_spectra[i].re as f32 / 255_f32,
-                pol_b_spectra[i].im as f32 / 255_f32,
-            );
-            total_power_spectra[i] = pol_a_float.norm() + pol_b_float.norm();
-        }
+        // for i in 0..CHANNELS {
+        //     let pol_a_float = Complex::new(
+        //         pol_a_spectra[i].re as f32 / 255_f32,
+        //         pol_a_spectra[i].im as f32 / 255_f32,
+        //     );
+        //     let pol_b_float = Complex::new(
+        //         pol_b_spectra[i].re as f32 / 255_f32,
+        //         pol_b_spectra[i].im as f32 / 255_f32,
+        //     );
+        //     total_power_spectra[i] = pol_a_float.norm() + pol_b_float.norm();
+        // }
 
         // Metrics
         cnt += PAYLOAD_SIZE;
