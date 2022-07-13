@@ -10,8 +10,8 @@ const CHANNELS: usize = 2048;
 type ComplexByte = Complex<u8>;
 
 fn total_power_spectra<const N: usize>(
-    pol_a: [ComplexByte; N],
-    pol_b: [ComplexByte; N],
+    pol_a: &[ComplexByte; N],
+    pol_b: &[ComplexByte; N],
 ) -> [f32; N] {
     let mut spectra = [0f32; N];
     for i in 0..N {
@@ -23,7 +23,7 @@ fn total_power_spectra<const N: usize>(
 }
 
 fn payload_to_spectra(
-    payload: [u8; PAYLOAD_SIZE],
+    payload: &[u8; PAYLOAD_SIZE],
 ) -> ([ComplexByte; CHANNELS], [ComplexByte; CHANNELS]) {
     assert_eq!(PAYLOAD_SIZE, CHANNELS * 4);
     let mut pol_a = [ComplexByte::default(); CHANNELS];
@@ -68,8 +68,8 @@ fn main() -> std::io::Result<()> {
     loop {
         // Grab incoming data
         socket.recv(&mut buf)?;
-        let (pol_a, pol_b) = payload_to_spectra(buf);
-        let _spectra = total_power_spectra(pol_a, pol_b);
+        let (pol_a, pol_b) = payload_to_spectra(&buf);
+        let _spectra = total_power_spectra(&pol_a, &pol_b);
         // Metrics
         cnt += PAYLOAD_SIZE;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
