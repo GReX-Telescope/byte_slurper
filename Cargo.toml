@@ -11,3 +11,11 @@ num-complex = "0.4.2"
 [profile.release]
 lto = true
 panic = "abort"
+
+[dev-dependencies]
+criterion = "0.3"
+rand = "0.8"
+
+[[bench]]
+name = "payload_to_spectra"
+harness = false
