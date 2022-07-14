@@ -4,11 +4,7 @@ use std::net::UdpSocket;
 use std::time::Instant;
 
 fn mean<const N: usize>(list: &[f32; N]) -> f32 {
-    let mut sum = 0f32;
-    (0..N).for_each(|i| {
-        sum += list[i];
-    });
-    sum / N as f32
+    list.iter().sum::<f32>() / N as f32
 }
 
 fn main() -> std::io::Result<()> {
@@ -37,7 +33,7 @@ fn main() -> std::io::Result<()> {
             println!(
                 "Rate - {} Gb/s\nTotal Specta Power - {}",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
-                0 //mean(&spectra)
+                mean(&spectra)
             );
             // let mut wtr = csv::Writer::from_writer(io::stdout());
             // wtr.write_record(spectra.map(|e| e.to_string()))?;
