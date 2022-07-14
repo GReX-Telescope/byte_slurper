@@ -9,14 +9,11 @@ pub type ComplexByte = Complex<u8>;
 pub fn total_power_spectra<const N: usize>(
     pol_a: &[ComplexByte; N],
     pol_b: &[ComplexByte; N],
-) -> [f32; N] {
-    let mut spectra = [0f32; N];
+    spectra: &mut [f32; N],
+) {
     for i in 0..N {
-        let pol_a_float = Complex::new(pol_a[i].re as f32 / 255_f32, pol_a[i].im as f32 / 255_f32);
-        let pol_b_float = Complex::new(pol_b[i].re as f32 / 255_f32, pol_b[i].im as f32 / 255_f32);
-        spectra[i] = pol_a_float.norm() + pol_b_float.norm();
+        spectra[i] = pol_a[i].norm_sqr() as f32 + pol_b[i].norm_sqr() as f32;
     }
-    spectra
 }
 
 pub fn payload_to_spectra(

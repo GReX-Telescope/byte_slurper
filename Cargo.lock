@@ -51,6 +51,7 @@ dependencies = [
  "csv",
  "no-panic",
  "num-complex",
+ "num-traits",
  "rand",
 ]
 
