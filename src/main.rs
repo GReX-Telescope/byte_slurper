@@ -37,7 +37,7 @@ fn main() -> std::io::Result<()> {
             println!(
                 "Rate - {} Gb/s\nTotal Specta Power - {}",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
-                mean(&spectra)
+                0 //mean(&spectra)
             );
             // let mut wtr = csv::Writer::from_writer(io::stdout());
             // wtr.write_record(spectra.map(|e| e.to_string()))?;
