@@ -3,10 +3,6 @@ use std::default::Default;
 use std::net::UdpSocket;
 use std::time::Instant;
 
-fn mean<const N: usize>(list: &[f32; N]) -> f32 {
-    list.iter().sum::<f32>() / N as f32
-}
-
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
@@ -31,9 +27,8 @@ fn main() -> std::io::Result<()> {
             // Print perf
             last_reported = Instant::now();
             println!(
-                "Rate - {} Gb/s\nTotal Specta Power - {}",
+                "Rate - {} Gb/s",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
-                mean(&spectra)
             );
             // let mut wtr = csv::Writer::from_writer(io::stdout());
             // wtr.write_record(spectra.map(|e| e.to_string()))?;
