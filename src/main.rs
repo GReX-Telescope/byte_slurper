@@ -24,7 +24,7 @@ fn main() -> std::io::Result<()> {
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum);
+        vsum_mut(&stokes, &mut stokes_accum, 122070); // Packets per s
 
         // Metrics
         cnt += PAYLOAD_SIZE;

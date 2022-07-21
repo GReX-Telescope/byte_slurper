@@ -12,7 +12,9 @@ pub fn stokes_i<const N: usize>(
     output: &mut [f32; N],
 ) {
     for i in 0..N {
-        output[i] = pol_x[i].norm_sqr() as f32 + pol_y[i].norm_sqr() as f32;
+        let pol_x_cast = Complex::new(pol_x[i].re as f32, pol_x[i].im as f32);
+        let pol_y_cast = Complex::new(pol_y[i].re as f32, pol_y[i].im as f32);
+        output[i] = pol_x_cast.norm_sqr() + pol_y_cast.norm_sqr();
     }
 }
 
@@ -50,9 +52,8 @@ pub fn payload_to_spectra(
     }
 }
 
-#[inline]
-pub fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N]) {
+pub fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N], n: u32) {
     for i in 0..N {
-        b[i] += a[i]
+        b[i] += a[i] / n as f32
     }
 }

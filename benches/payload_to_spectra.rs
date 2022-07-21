@@ -29,7 +29,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             vsum_mut(
                 black_box(&zeros),
                 black_box(&mut spectra),
-                black_box(8192f32),
+                black_box(8192u32),
             )
         })
     });
