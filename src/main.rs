@@ -28,7 +28,7 @@ fn main() -> std::io::Result<()> {
         // Grab incoming data
         socket.recv(&mut buf)?;
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
-        // stokes_i(&pol_x, &pol_y, &mut stokes);
+        stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
         // vsum_mut(&stokes, &mut stokes_accum, PAYLOAD_SIZE as f32 * 8192f32);
 
