@@ -50,8 +50,9 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N], n: f32) {
+#[inline]
+pub fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N]) {
     for i in 0..N {
-        b[i] += a[i] / n
+        b[i] += a[i]
     }
 }
