@@ -4,6 +4,12 @@ use std::net::UdpSocket;
 use std::time::Instant;
 use std::{io, process};
 
+fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N]) {
+    for i in 0..N {
+        b[i] += a[i]
+    }
+}
+
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
@@ -16,12 +22,16 @@ fn main() -> std::io::Result<()> {
     let mut pol_y = [ComplexByte::default(); CHANNELS];
 
     let mut stokes = [0f32; CHANNELS];
+    let mut stokes_accum = [0f32; CHANNELS];
 
     loop {
         // Grab incoming data
         socket.recv(&mut buf)?;
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
+        // Sum stokes
+        vsum_mut(&stokes, &mut stokes_accum);
+
         // Metrics
         cnt += PAYLOAD_SIZE;
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
@@ -32,7 +42,7 @@ fn main() -> std::io::Result<()> {
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
             let mut wtr = csv::Writer::from_writer(io::stdout());
-            wtr.write_record(stokes.map(|e| e.to_string()))?;
+            wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
             wtr.flush()?;
             // Bail
             process::exit(0);
