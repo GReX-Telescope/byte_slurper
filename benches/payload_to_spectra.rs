@@ -1,8 +1,4 @@
-use byte_slurper::payload_to_spectra;
-use byte_slurper::total_power_spectra;
-use byte_slurper::ComplexByte;
-use byte_slurper::CHANNELS;
-use byte_slurper::PAYLOAD_SIZE;
+use byte_slurper::{payload_to_spectra, stokes_i, ComplexByte, CHANNELS, PAYLOAD_SIZE};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::prelude::*;
 
@@ -27,9 +23,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("total_power", |b| {
+    c.bench_function("stokes", |b| {
         b.iter(|| {
-            total_power_spectra(
+            stokes_i(
                 black_box(&pol_a),
                 black_box(&pol_b),
                 black_box(&mut spectra),

@@ -6,13 +6,13 @@ pub const CHANNELS: usize = 2048;
 
 pub type ComplexByte = Complex<u8>;
 
-pub fn total_power_spectra<const N: usize>(
-    pol_a: &[ComplexByte; N],
-    pol_b: &[ComplexByte; N],
-    spectra: &mut [f32; N],
+pub fn stokes_i<const N: usize>(
+    pol_x: &[ComplexByte; N],
+    pol_y: &[ComplexByte; N],
+    output: &mut [f32; N],
 ) {
     for i in 0..N {
-        spectra[i] = pol_a[i].norm_sqr() as f32 + pol_b[i].norm_sqr() as f32;
+        output[i] = pol_x[i].norm_sqr() as f32 + pol_y[i].norm_sqr() as f32;
     }
 }
 
