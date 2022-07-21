@@ -4,9 +4,9 @@ use std::net::UdpSocket;
 use std::time::Instant;
 use std::{io, process};
 
-fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N]) {
+fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N], n: f32) {
     for i in 0..N {
-        b[i] += a[i]
+        b[i] += a[i] / n
     }
 }
 
@@ -30,7 +30,7 @@ fn main() -> std::io::Result<()> {
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum);
+        vsum_mut(&stokes, &mut stokes_accum, PAYLOAD_SIZE as f32 * 8192f32);
 
         // Metrics
         cnt += PAYLOAD_SIZE;
@@ -41,11 +41,11 @@ fn main() -> std::io::Result<()> {
                 "Rate - {} Gb/s",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
-            let mut wtr = csv::Writer::from_writer(io::stdout());
-            wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
-            wtr.flush()?;
-            // Bail
-            process::exit(0);
+            // let mut wtr = csv::Writer::from_writer(io::stdout());
+            // wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
+            // wtr.flush()?;
+            // // Bail
+            // process::exit(0);
         }
     }
 }
