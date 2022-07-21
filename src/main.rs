@@ -4,12 +4,6 @@ use std::net::UdpSocket;
 use std::time::Instant;
 use std::{io, process};
 
-fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N], n: f32) {
-    for i in 0..N {
-        b[i] += a[i] / n
-    }
-}
-
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
@@ -30,7 +24,7 @@ fn main() -> std::io::Result<()> {
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        // vsum_mut(&stokes, &mut stokes_accum, PAYLOAD_SIZE as f32 * 8192f32);
+        vsum_mut(&stokes, &mut stokes_accum, PAYLOAD_SIZE as f32 * 8192f32);
 
         // Metrics
         cnt += PAYLOAD_SIZE;

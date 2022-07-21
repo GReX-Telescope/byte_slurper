@@ -49,3 +49,9 @@ pub fn payload_to_spectra(
         pol_b[2 * i + 1] = b2;
     }
 }
+
+pub fn vsum_mut<const N: usize>(a: &[f32; N], b: &mut [f32; N], n: f32) {
+    for i in 0..N {
+        b[i] += a[i] / n
+    }
+}

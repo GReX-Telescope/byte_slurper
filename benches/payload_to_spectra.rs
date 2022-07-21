@@ -1,4 +1,4 @@
-use byte_slurper::{payload_to_spectra, stokes_i, ComplexByte, CHANNELS, PAYLOAD_SIZE};
+use byte_slurper::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::prelude::*;
 
@@ -11,6 +11,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Containers
     let mut pol_a = [ComplexByte::default(); CHANNELS];
     let mut pol_b = [ComplexByte::default(); CHANNELS];
+    let zeros = [0f32; CHANNELS];
     let mut spectra = [0f32; CHANNELS];
 
     c.bench_function("payload_to_spectra", |b| {
@@ -19,6 +20,16 @@ fn criterion_benchmark(c: &mut Criterion) {
                 black_box(&dummy_payload),
                 black_box(&mut pol_a),
                 black_box(&mut pol_b),
+            )
+        })
+    });
+
+    c.bench_function("vsum_mut", |b| {
+        b.iter(|| {
+            vsum_mut(
+                black_box(&zeros),
+                black_box(&mut spectra),
+                black_box(8192f32),
             )
         })
     });
