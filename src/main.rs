@@ -31,7 +31,7 @@ fn main() -> std::io::Result<()> {
 
         // Metrics
         cnt += PAYLOAD_SIZE;
-        if last_reported.elapsed().as_secs_f32() >= 1.0 {
+        if last_reported.elapsed().as_secs_f32() >= 5.0 {
             // Print perf
             last_reported = Instant::now();
             println!(
