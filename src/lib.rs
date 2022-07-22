@@ -4,7 +4,7 @@ pub const PAYLOAD_SIZE: usize = 8192;
 pub const WORD_SIZE: usize = 8;
 pub const CHANNELS: usize = 2048;
 
-pub type ComplexByte = Complex<u8>;
+pub type ComplexByte = Complex<i8>;
 
 pub fn stokes_i<const N: usize>(
     pol_x: &[ComplexByte; N],
@@ -29,20 +29,20 @@ pub fn payload_to_spectra(
         // [A1 B1 A2 B2]
         // Where each channel is [Re Im]
         let a1 = ComplexByte {
-            re: word[7],
-            im: word[6],
+            re: word[7] as i8,
+            im: word[6] as i8,
         };
         let a2 = ComplexByte {
-            re: word[5],
-            im: word[4],
+            re: word[5] as i8,
+            im: word[4] as i8,
         };
         let b1 = ComplexByte {
-            re: word[3],
-            im: word[2],
+            re: word[3] as i8,
+            im: word[2] as i8,
         };
         let b2 = ComplexByte {
-            re: word[1],
-            im: word[0],
+            re: word[1] as i8,
+            im: word[0] as i8,
         };
         // Update spectra
         pol_a[2 * i] = a1;
