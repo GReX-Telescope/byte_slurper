@@ -1,3 +1,4 @@
+#![feature(total_cmp)]
 use byte_slurper::*;
 use std::default::Default;
 use std::net::UdpSocket;
