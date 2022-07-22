@@ -12,8 +12,8 @@ pub fn stokes_i<const N: usize>(
     output: &mut [f32; N],
 ) {
     for i in 0..N {
-        let pol_x_cast = Complex::new(pol_x[i].re as f32, pol_x[i].im as f32);
-        let pol_y_cast = Complex::new(pol_y[i].re as f32, pol_y[i].im as f32);
+        let pol_x_cast = Complex::new(pol_x[i].re as f32 / 127f32, pol_x[i].im as f32 / 127f32);
+        let pol_y_cast = Complex::new(pol_y[i].re as f32 / 127f32, pol_y[i].im as f32 / 127f32);
         output[i] = pol_x_cast.norm_sqr() + pol_y_cast.norm_sqr();
     }
 }
