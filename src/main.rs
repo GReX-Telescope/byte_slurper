@@ -1,13 +1,15 @@
 use byte_slice_cast::*;
 use byte_slurper::*;
 use std::default::Default;
+use std::io::Write;
+use std::net::TcpListener;
 use std::net::UdpSocket;
 use std::time::Instant;
-use std::{io, process};
 
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
-    let stokes_socket = UdpSocket::bind("0.0.0.0:34254")?;
+    let stokes_stream = TcpListener::bind("0.0.0.0:4242")?;
+    let (mut stokes_socket, _) = stokes_stream.accept()?;
     let mut buf = [0u8; PAYLOAD_SIZE];
     let mut cnt = 0usize;
 
@@ -40,7 +42,7 @@ fn main() -> std::io::Result<()> {
                 "Rate - {} Gb/s\t",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
-            stokes_socket.send_to(stokes_accum.as_byte_slice(), "0.0.0.0:4242")?;
+            stokes_socket.write_all(stokes_accum.as_byte_slice())?;
             stokes_accum = [0f32; CHANNELS];
         }
     }
