@@ -1,3 +1,4 @@
+use byte_slice_cast::*;
 use byte_slurper::*;
 use std::default::Default;
 use std::net::UdpSocket;
@@ -6,6 +7,7 @@ use std::{io, process};
 
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
+    let stokes_socket = UdpSocket::bind("0.0.0.0:34254")?;
     let mut buf = [0u8; PAYLOAD_SIZE];
     let mut cnt = 0usize;
 
@@ -31,23 +33,14 @@ fn main() -> std::io::Result<()> {
 
         // Metrics
         cnt += PAYLOAD_SIZE;
-        if last_reported.elapsed().as_secs_f32() >= 5.0 {
+        if last_reported.elapsed().as_secs_f32() >= 1.0 {
             // Print perf
             last_reported = Instant::now();
             println!(
                 "Rate - {} Gb/s\t",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
-            let mean = stokes_accum.iter().sum::<f32>() / CHANNELS as f32;
-            println!("Mean - {}", mean);
-            for i in 0..CHANNELS {
-                println!(
-                    "{},{}",
-                    1280e6 + (i as f32 * (250e6 / CHANNELS as f32)),
-                    stokes_accum[i]
-                )
-            }
-            process::exit(0);
+            stokes_socket.send_to(stokes_accum.as_byte_slice(), "0.0.0.0:4242")?;
             stokes_accum = [0f32; CHANNELS];
         }
     }

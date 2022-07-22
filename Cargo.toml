@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+byte-slice-cast = "1.2.1"
 csv = "1.1.6"
 no-panic = "0.1.15"
 num-complex = "0.4.2"
