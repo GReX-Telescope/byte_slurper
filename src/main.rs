@@ -31,18 +31,17 @@ fn main() -> std::io::Result<()> {
         if last_reported.elapsed().as_secs_f32() >= 1.0 {
             // Print perf
             last_reported = Instant::now();
-            print!(
+            println!(
                 "Rate - {} Gb/s\t",
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
-            // Sort
-            let mean = stokes_accum.clone().iter().sum::<f32>() / CHANNELS as f32;
+            let mean = stokes_accum.iter().sum::<f32>() / CHANNELS as f32;
             println!("Mean - {}", mean);
-            stokes_accum = [0f32; CHANNELS];
             let mut wtr = csv::Writer::from_writer(io::stdout());
             wtr.write_record(stokes_accum.map(|e| format!("{:.2}", e)))?;
             wtr.flush()?;
             process::exit(0);
+            stokes_accum = [0f32; CHANNELS];
         }
     }
 }
