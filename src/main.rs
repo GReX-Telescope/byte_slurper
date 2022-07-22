@@ -20,7 +20,10 @@ fn main() -> std::io::Result<()> {
 
     loop {
         // Grab incoming data
-        socket.recv(&mut buf)?;
+        let n = socket.recv(&mut buf)?;
+        if n != PAYLOAD_SIZE {
+            continue;
+        }
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
