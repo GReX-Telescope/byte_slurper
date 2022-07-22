@@ -40,9 +40,13 @@ fn main() -> std::io::Result<()> {
             );
             let mean = stokes_accum.iter().sum::<f32>() / CHANNELS as f32;
             println!("Mean - {}", mean);
-            let mut wtr = csv::Writer::from_writer(io::stdout());
-            wtr.write_record(stokes_accum.map(|e| format!("{:.2}", e)))?;
-            wtr.flush()?;
+            for i in 0..CHANNELS {
+                println!(
+                    "{},{}",
+                    1530f32 - (i as f32 * (250e6 / CHANNELS as f32)),
+                    stokes_accum[i]
+                )
+            }
             process::exit(0);
             stokes_accum = [0f32; CHANNELS];
         }
