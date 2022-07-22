@@ -43,7 +43,7 @@ fn main() -> std::io::Result<()> {
             for i in 0..CHANNELS {
                 println!(
                     "{},{}",
-                    1530f32 - (i as f32 * (250e6 / CHANNELS as f32)),
+                    1530e6 - (i as f32 * (250e6 / CHANNELS as f32)),
                     stokes_accum[i]
                 )
             }
