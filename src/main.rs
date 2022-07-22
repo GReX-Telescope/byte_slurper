@@ -5,6 +5,8 @@ use std::io::Write;
 use std::net::TcpListener;
 use std::net::UdpSocket;
 
+const AVG_SIZE: usize = 500000;
+
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
     let stokes_stream = TcpListener::bind("0.0.0.0:4242")?;
@@ -17,7 +19,7 @@ fn main() -> std::io::Result<()> {
     let mut stokes = [0f32; CHANNELS];
     let mut stokes_accum = [0f32; CHANNELS];
 
-    let mut sums = 0u64;
+    let mut sums = 0usize;
     println!("Here we go! (Mario voice)");
     loop {
         // Grab incoming data
@@ -28,12 +30,12 @@ fn main() -> std::io::Result<()> {
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum, 30000); // Packets per s
+        vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32); // Packets per s
 
         // Metrics
         sums += 1;
 
-        if sums == 30000 {
+        if sums == AVG_SIZE {
             stokes_socket.write_all(stokes_accum.as_byte_slice())?;
             stokes_accum = [0f32; CHANNELS];
             sums = 0;
