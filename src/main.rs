@@ -42,11 +42,11 @@ fn main() -> std::io::Result<()> {
             let max = stokes_accum[2047];
             println!("Mean - {}\tMin - {}\tMax - {}", mean, min, max);
             stokes_accum = [0f32; CHANNELS];
-            // let mut wtr = csv::Writer::from_writer(io::stdout());
-            // wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
-            // wtr.flush()?;
-            // Bail
-            //process::exit(0);
+            let mut wtr = csv::Writer::from_writer(io::stdout());
+            wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
+            wtr.flush()?;
+            Bail
+            process::exit(0);
         }
     }
 }
