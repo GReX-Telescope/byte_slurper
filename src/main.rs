@@ -36,7 +36,8 @@ fn main() -> std::io::Result<()> {
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
             let mean = stokes_accum.iter().sum::<f32>() / CHANNELS as f32;
-            print!("Mean - {}\n", mean)
+            println!("Mean - {}", mean);
+            stokes_accum = [0f32; CHANNELS];
             // let mut wtr = csv::Writer::from_writer(io::stdout());
             // wtr.write_record(stokes_accum.map(|e| e.to_string()))?;
             // wtr.flush()?;
