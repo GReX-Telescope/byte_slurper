@@ -1,4 +1,3 @@
-#![feature(total_cmp)]
 use byte_slurper::*;
 use std::default::Default;
 use std::net::UdpSocket;
@@ -37,7 +36,7 @@ fn main() -> std::io::Result<()> {
                 (cnt as f64) / program_start.elapsed().as_secs_f64() / 1.25e8,
             );
             // Sort
-            stokes_accum.sort_by(|a, b| a.total_cmp(&b));
+            stokes_accum.sort_by(|a, b| a.partial_cmp(b).unwrap());
             let mean = stokes_accum.iter().sum::<f32>() / CHANNELS as f32;
             let min = stokes_accum[0];
             let max = stokes_accum[2047];
