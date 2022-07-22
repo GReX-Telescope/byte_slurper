@@ -36,6 +36,7 @@ fn main() -> std::io::Result<()> {
         sums += 1;
 
         if sums == AVG_SIZE {
+            println!("Sending payload");
             stokes_socket.write_all(stokes_accum.as_byte_slice())?;
             stokes_accum = [0f32; CHANNELS];
             sums = 0;
