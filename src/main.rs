@@ -4,6 +4,7 @@ use std::default::Default;
 use std::io::Write;
 use std::net::TcpListener;
 use std::net::UdpSocket;
+use std::time::Instant;
 
 const AVG_SIZE: usize = 5000;
 
@@ -20,6 +21,10 @@ fn main() -> std::io::Result<()> {
     let mut stokes_accum = [0f32; CHANNELS];
 
     let mut sums = 0usize;
+    let mut cnt = 0usize;
+
+    let mut last_reported = Instant::now();
+
     println!("Here we go! (Mario voice)");
     loop {
         // Grab incoming data
@@ -30,16 +35,21 @@ fn main() -> std::io::Result<()> {
         payload_to_spectra(&buf, &mut pol_x, &mut pol_y);
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32); // Packets per s
+        vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32);
 
         // Metrics
         sums += 1;
+        cnt += PAYLOAD_SIZE;
 
         if sums == AVG_SIZE {
-            println!("Sending payload");
+            let rate = (cnt as f32) / last_reported.elapsed().as_secs_f32() / 1.25e8;
+            println!("TX Cycle! Rate - {} Gb/s", rate);
             stokes_socket.write_all(stokes_accum.as_byte_slice())?;
+            // Resets
             stokes_accum = [0f32; CHANNELS];
             sums = 0;
+            cnt = 0;
+            last_reported = Instant::now();
         }
     }
 }

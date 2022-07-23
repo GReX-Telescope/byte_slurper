@@ -6,15 +6,21 @@ pub const CHANNELS: usize = 2048;
 
 pub type ComplexByte = Complex<i8>;
 
+fn from_fixed_point_cmplx(num: ComplexByte) -> Complex<f32> {
+    Complex::new(
+        num.re as f32 / i8::MAX as f32,
+        num.im as f32 / i8::MAX as f32,
+    )
+}
+
 pub fn stokes_i<const N: usize>(
     pol_x: &[ComplexByte; N],
     pol_y: &[ComplexByte; N],
     output: &mut [f32; N],
 ) {
     for i in 0..N {
-        let pol_x_cast = Complex::new(pol_x[i].re as f32 / 127f32, pol_x[i].im as f32 / 127f32);
-        let pol_y_cast = Complex::new(pol_y[i].re as f32 / 127f32, pol_y[i].im as f32 / 127f32);
-        output[i] = pol_x_cast.norm_sqr() + pol_y_cast.norm_sqr();
+        output[i] = from_fixed_point_cmplx(pol_x[i]).norm_sqr()
+            + from_fixed_point_cmplx(pol_y[i]).norm_sqr();
     }
 }
 
