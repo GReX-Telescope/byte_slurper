@@ -6,7 +6,7 @@ use std::net::TcpListener;
 use std::net::UdpSocket;
 use std::time::Instant;
 
-const AVG_SIZE: usize = 5000;
+const AVG_SIZE: usize = 10000;
 
 fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
