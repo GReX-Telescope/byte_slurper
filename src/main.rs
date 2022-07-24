@@ -52,7 +52,7 @@ fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
 
     // Setup multithreading
-    let (sender, receiver) = bounded(10);
+    let (sender, receiver) = bounded(1000);
 
     // Start producing polarizations on a thread
     thread::spawn(move || {
