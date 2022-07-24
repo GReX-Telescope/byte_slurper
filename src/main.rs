@@ -27,24 +27,24 @@ fn stokes_consumer(reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])
         // Grab from channel
         stokes_i(&pol_x, &pol_y, &mut stokes);
         // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32);
+        // vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32);
 
-        // Metrics
-        sums += 1;
-        cnt += PAYLOAD_SIZE;
+        // // Metrics
+        // sums += 1;
+        // cnt += PAYLOAD_SIZE;
 
-        if sums == AVG_SIZE {
-            let rate = (cnt as f32) / last_reported.elapsed().as_secs_f32() / 1.25e8;
-            println!("TX Cycle! Rate - {} Gb/s", rate);
-            // stokes_socket
-            //     .write_all(stokes_accum.as_byte_slice())
-            //     .unwrap();
-            // Resets
-            stokes_accum = [0f32; CHANNELS];
-            sums = 0;
-            cnt = 0;
-            last_reported = Instant::now();
-        }
+        // if sums == AVG_SIZE {
+        //     let rate = (cnt as f32) / last_reported.elapsed().as_secs_f32() / 1.25e8;
+        //     println!("TX Cycle! Rate - {} Gb/s", rate);
+        //     // stokes_socket
+        //     //     .write_all(stokes_accum.as_byte_slice())
+        //     //     .unwrap();
+        //     // Resets
+        //     stokes_accum = [0f32; CHANNELS];
+        //     sums = 0;
+        //     cnt = 0;
+        //     last_reported = Instant::now();
+        // }
     }
 }
 
