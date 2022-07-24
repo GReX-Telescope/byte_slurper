@@ -2,6 +2,7 @@ use byte_slice_cast::*;
 use byte_slurper::*;
 use crossbeam_channel::bounded;
 use crossbeam_channel::Receiver;
+use pcap::Device;
 use std::default::Default;
 use std::io::Write;
 use std::net::TcpListener;
@@ -49,8 +50,9 @@ fn stokes_consumer(reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])
 }
 
 fn main() -> std::io::Result<()> {
+    println!("{:#?}", Device::list().unwrap());
+    return Ok(());
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
-
     // Setup multithreading
     let (sender, receiver) = bounded(1000);
 
