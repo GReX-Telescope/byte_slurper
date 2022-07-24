@@ -55,6 +55,7 @@ version = "0.1.0"
 dependencies = [
  "byte-slice-cast",
  "criterion",
+ "crossbeam-channel",
  "csv",
  "no-panic",
  "num-complex",

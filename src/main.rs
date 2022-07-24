@@ -1,11 +1,11 @@
 use byte_slice_cast::*;
 use byte_slurper::*;
+use crossbeam_channel::bounded;
+use crossbeam_channel::Receiver;
 use std::default::Default;
 use std::io::Write;
 use std::net::TcpListener;
 use std::net::UdpSocket;
-use std::sync::mpsc;
-use std::sync::mpsc::Receiver;
 use std::thread;
 use std::time::Instant;
 
@@ -52,7 +52,7 @@ fn main() -> std::io::Result<()> {
     let socket = UdpSocket::bind("192.168.5.1:60000")?;
 
     // Setup multithreading
-    let (sender, receiver) = mpsc::channel();
+    let (sender, receiver) = bounded(1);
 
     // Start producing polarizations on a thread
     thread::spawn(move || {

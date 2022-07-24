@@ -4,11 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-byte-slice-cast = "1.2.1"
-csv = "1.1.6"
-no-panic = "0.1.15"
-num-complex = "0.4.2"
-num-traits = "0.2.15"
+byte-slice-cast = "1.2"
+crossbeam-channel = "0.5"
+csv = "1.1"
+no-panic = "0.1"
+num-complex = "0.4"
+num-traits = "0.2"
 
 [profile.release]
 lto = true
