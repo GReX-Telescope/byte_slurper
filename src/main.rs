@@ -12,8 +12,8 @@ use std::time::Instant;
 const AVG_SIZE: usize = 10000;
 
 fn stokes_consumer(reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])>) {
-    let stokes_stream = TcpListener::bind("0.0.0.0:4242").unwrap();
-    let (mut stokes_socket, _) = stokes_stream.accept().unwrap();
+    // let stokes_stream = TcpListener::bind("0.0.0.0:4242").unwrap();
+    // let (mut stokes_socket, _) = stokes_stream.accept().unwrap();
 
     let mut stokes = [0f32; CHANNELS];
     let mut stokes_accum = [0f32; CHANNELS];
@@ -36,9 +36,9 @@ fn stokes_consumer(reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])
         if sums == AVG_SIZE {
             let rate = (cnt as f32) / last_reported.elapsed().as_secs_f32() / 1.25e8;
             println!("TX Cycle! Rate - {} Gb/s", rate);
-            stokes_socket
-                .write_all(stokes_accum.as_byte_slice())
-                .unwrap();
+            // stokes_socket
+            //     .write_all(stokes_accum.as_byte_slice())
+            //     .unwrap();
             // Resets
             stokes_accum = [0f32; CHANNELS];
             sums = 0;
