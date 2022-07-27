@@ -7,7 +7,7 @@ harness = false
 name = "payload_to_spectra"
 
 [dependencies]
-afpacket = "0.2"
+af_packet = "0.3"
 byte-slice-cast = "1.2"
 chrono = "0.4.19"
 crossbeam-channel = "0.5"

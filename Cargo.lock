@@ -3,12 +3,13 @@
 version = 3
 
 [[package]]
-name = "afpacket"
-version = "0.2.3"
+name = "af_packet"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa514b7c2d4cb8ac9d54925c91900d21fdda508877694661858744211c11c69c"
+checksum = "d6b9ce0cb5db0d759ecd935e7fbe972f27f8854e27b483f8e183c7d0304ae283"
 dependencies = [
  "libc",
+ "nom 5.1.2",
 ]
 
 [[package]]
@@ -19,6 +20,12 @@ checksum = "1e37cfd5e7657ada45f742d6e99ca5788580b5c529dc78faf11ece6dc702656f"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "arrayvec"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
 
 [[package]]
 name = "arrayvec"
@@ -100,7 +107,7 @@ checksum = "87c5fdd0166095e1d463fc6cc01aa8ce547ad77a4e84d42eb6762b084e28067e"
 name = "byte_slurper"
 version = "0.1.0"
 dependencies = [
- "afpacket",
+ "af_packet",
  "byte-slice-cast",
  "chrono",
  "criterion",
@@ -135,7 +142,7 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
 dependencies = [
- "nom",
+ "nom 7.1.1",
 ]
 
 [[package]]
@@ -331,7 +338,7 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bcb08c4aab4e2985045305551e67126b43f1b6b136bc4e1cd87fb0327877a611"
 dependencies = [
- "arrayvec",
+ "arrayvec 0.7.2",
 ]
 
 [[package]]
@@ -494,6 +501,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lexical-core"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6607c62aa161d23d17a9072cc5da0be67cdfc89d3afb1e8d9c842bebc2525ffe"
+dependencies = [
+ "arrayvec 0.5.2",
+ "bitflags",
+ "cfg-if",
+ "ryu",
+ "static_assertions",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.126"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -570,6 +590,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "nom"
+version = "5.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffb4262d26ed83a1c0a33a38fe2bb15797329c85770da05e6b828ddb782627af"
+dependencies = [
+ "lexical-core",
+ "memchr",
+ "version_check",
 ]
 
 [[package]]
@@ -915,6 +946,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1019,6 +1056,12 @@ name = "unicode-width"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ed742d4ea2bd1176e236172c8429aaf54486e7ac098db29ffe6529e0ce50973"
+
+[[package]]
+name = "version_check"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "walkdir"
