@@ -92,14 +92,13 @@ fn main() -> std::io::Result<()> {
 
     // Start producing polarizations on a thread
     thread::spawn(move || {
-        let mut buf = [0u8; PAYLOAD_SIZE];
         let mut pol_x = [ComplexByte::default(); CHANNELS];
         let mut pol_y = [ComplexByte::default(); CHANNELS];
         loop {
             // Grab incoming data
             let mut block = ring.get_block();
             for framed_packet in block.get_raw_packets() {
-                match SlicedPacket::from_ethernet(framed_packet.data) {
+                match SlicedPacket::from_ethernet(&framed_packet.data[82..]) {
                     Ok(v) => {
                         if let Some(TransportSlice::Udp(udp_header)) = v.transport {
                             let n = udp_header.length();
