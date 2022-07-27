@@ -1,10 +1,13 @@
 [package]
+edition = "2021"
 name = "byte_slurper"
 version = "0.1.0"
-edition = "2021"
+[[bench]]
+harness = false
+name = "payload_to_spectra"
 
 [dependencies]
-af_packet = "0.3"
+afpacket = "0.2"
 byte-slice-cast = "1.2"
 chrono = "0.4.19"
 crossbeam-channel = "0.5"
@@ -13,16 +16,16 @@ etherparse = "0.12.0"
 no-panic = "0.1"
 num-complex = "0.4"
 num-traits = "0.2"
-psrdada = { git = "https://github.com/GReX-Telescope/psrdada-rs", branch = "main" }
 
-[profile.release]
-lto = true
-panic = "abort"
+[dependencies.psrdada]
+branch = "main"
+git = "https://github.com/GReX-Telescope/psrdada-rs"
 
 [dev-dependencies]
 criterion = "0.3"
 rand = "0.8"
 
-[[bench]]
-name = "payload_to_spectra"
-harness = false
+[profile]
+[profile.release]
+lto = true
+panic = "abort"

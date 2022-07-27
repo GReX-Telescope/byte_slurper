@@ -1,4 +1,4 @@
-use af_packet::rx::Ring;
+use afpacket::sync::RawPacketStream;
 use byte_slice_cast::*;
 use byte_slurper::*;
 use chrono::{Datelike, Timelike, Utc};
@@ -86,7 +86,10 @@ fn main() -> std::io::Result<()> {
     let dada_key = 0xbeef;
 
     // Open the memory-mapped device
-    let mut ring = Ring::from_if_name(device_name).unwrap();
+    let mut ps = RawPacketStream::new().unwrap();
+    // Bind to our interface
+    ps.bind(device_name).unwrap();
+
     // Setup multithreading
     let (sender, receiver) = bounded(1000);
 
@@ -97,30 +100,28 @@ fn main() -> std::io::Result<()> {
         let mut pol_y = [ComplexByte::default(); CHANNELS];
         loop {
             // Grab incoming data
-            let mut block = ring.get_block();
-            for framed_packet in block.get_raw_packets() {
-                match SlicedPacket::from_ip(framed_packet.data) {
-                    Ok(v) => {
-                        if let Some(TransportSlice::Udp(udp_header)) = v.transport {
-                            let n = udp_header.length();
-                            let dest_port = udp_header.destination_port();
-                            if n as usize != PAYLOAD_SIZE || dest_port != port {
-                                continue;
-                            }
-                            // Build spectra from payload
-                            payload_to_spectra(v.payload, &mut pol_x, &mut pol_y);
-                            // Send to channel
-                            sender.send((pol_x, pol_y)).unwrap();
-                        } else {
+            ps.read(&mut buf).unwrap();
+            // Decode ethernet frame
+            match SlicedPacket::from_ip(&buf) {
+                Ok(v) => {
+                    if let Some(TransportSlice::Udp(udp_header)) = v.transport {
+                        let n = udp_header.length();
+                        let dest_port = udp_header.destination_port();
+                        if n as usize != PAYLOAD_SIZE || dest_port != port {
                             continue;
                         }
-                    }
-                    Err(e) => {
+                        // Build spectra from payload
+                        payload_to_spectra(v.payload, &mut pol_x, &mut pol_y);
+                        // Send to channel
+                        sender.send((pol_x, pol_y)).unwrap();
+                    } else {
                         continue;
                     }
                 }
+                Err(e) => {
+                    continue;
+                }
             }
-            block.mark_as_consumed();
         }
     });
 
