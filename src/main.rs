@@ -104,6 +104,7 @@ fn main() -> std::io::Result<()> {
                             let n = udp_header.length();
                             let dest_port = udp_header.destination_port();
                             if n as usize != PAYLOAD_SIZE || dest_port != port {
+                                eprintln!("Bad port or size");
                                 continue;
                             }
                             // Build spectra from payload
@@ -113,6 +114,7 @@ fn main() -> std::io::Result<()> {
                         }
                     }
                     Err(e) => {
+                        eprintln!("Read Error: {}", e);
                         continue;
                     }
                 }
