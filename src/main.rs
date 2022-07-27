@@ -1,16 +1,13 @@
-use af_packet::rx::{Block, Ring};
-use byte_slice_cast::*;
 use byte_slurper::*;
 use chrono::{Datelike, Timelike, Utc};
-use crossbeam_channel::bounded;
-use crossbeam_channel::Receiver;
-use etherparse::SlicedPacket;
-use etherparse::TransportSlice;
+use crossbeam_channel::{bounded, Receiver};
+use pnet::packet::ip::IpNextHeaderProtocols;
+use pnet::packet::Packet;
+use pnet::transport::{transport_channel, udp_packet_iter};
+use pnet::transport::{TransportChannelType::Layer4, TransportProtocol::Ipv4};
 use psrdada::DadaDBBuilder;
-use std::collections::HashMap;
-use std::default::Default;
 use std::thread;
-use std::time::Instant;
+use std::{collections::HashMap, default::Default};
 
 const AVG_SIZE: usize = 1024;
 
@@ -33,9 +30,6 @@ fn gen_header(
         ("UTC_START".to_owned(), utc_start.to_owned()),
     ])
 }
-
-// Every DOWNSAMPLE_FACTOR, send data to psrdada
-// Every
 
 fn stokes_to_dada(
     reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])>,
@@ -85,8 +79,11 @@ fn main() -> std::io::Result<()> {
     let port = 60000u16;
     let dada_key = 0xbeef;
 
-    // Open the memory-mapped device
-    let mut ring = Ring::from_if_name(device_name).unwrap();
+    // We're going to be looking at Layer 4, IpV4, UDP data
+    let (_, mut udp_rx) =
+        transport_channel(PAYLOAD_SIZE * 2, Layer4(Ipv4(IpNextHeaderProtocols::Udp)))
+            .expect("Error creating transport channel");
+
     // Setup multithreading
     let (sender, receiver) = bounded(1000);
 
@@ -94,33 +91,26 @@ fn main() -> std::io::Result<()> {
     thread::spawn(move || {
         let mut pol_x = [ComplexByte::default(); CHANNELS];
         let mut pol_y = [ComplexByte::default(); CHANNELS];
+        let mut iter = udp_packet_iter(&mut udp_rx);
         loop {
-            // Grab incoming data
-            let mut block = ring.get_block();
-            for framed_packet in block.get_raw_packets() {
-                match SlicedPacket::from_ethernet(&framed_packet.data[82..]) {
-                    Ok(v) => {
-                        if let Some(TransportSlice::Udp(udp_header)) = v.transport {
-                            let n = udp_header.length() - 8; // Remove the 8 byte UDP header
-                            let dest_port = udp_header.destination_port();
-                            if n as usize != PAYLOAD_SIZE || dest_port != port {
-                                eprintln!("Bad port ({}) or size ({})", dest_port, n);
-                                continue;
-                            }
-                            // Build spectra from payload
-                            println!("{}", v.payload.len());
-                            payload_to_spectra(&v.payload[0..PAYLOAD_SIZE], &mut pol_x, &mut pol_y);
-                            // Send to channel
-                            sender.send((pol_x, pol_y)).unwrap();
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Read Error: {}", e);
+            match iter.next() {
+                Ok((packet, _)) => {
+                    // Skip invalid packets
+                    if packet.get_destination() != port {
                         continue;
                     }
+                    if packet.get_length() as usize != PAYLOAD_SIZE {
+                        continue;
+                    }
+                    // Unpack
+                    payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
+                    // Send to PSRDADA
+                    sender.send((pol_x, pol_y)).unwrap();
+                }
+                Err(e) => {
+                    eprintln!("Packet next error - {}", e);
                 }
             }
-            block.mark_as_consumed();
         }
     });
 
