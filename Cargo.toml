@@ -9,7 +9,7 @@ chrono = "0.4.19"
 crossbeam-channel = "0.5"
 num-complex = "0.4"
 num-traits = "0.2"
-pnet = { version = "0.31", features = ["default", "std"]}
+pnet = "0.29"
 
 [dependencies.psrdada]
 branch = "main"
