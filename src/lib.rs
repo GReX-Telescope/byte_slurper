@@ -25,11 +25,10 @@ pub fn stokes_i<const N: usize>(
 }
 
 pub fn payload_to_spectra(
-    payload: &[u8; PAYLOAD_SIZE],
+    payload: &[u8],
     pol_a: &mut [ComplexByte; CHANNELS],
     pol_b: &mut [ComplexByte; CHANNELS],
 ) {
-    assert_eq!(PAYLOAD_SIZE, CHANNELS * 4);
     for (i, word) in payload.chunks_exact(WORD_SIZE).enumerate() {
         // Each word contains two frequencies for each polarization
         // [A1 B1 A2 B2]
