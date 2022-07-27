@@ -82,7 +82,7 @@ fn stokes_to_dada(
 fn main() -> std::io::Result<()> {
     // Get these from args
     let device_name = "enp129s0f0";
-    let port = 6000u16;
+    let port = 60000u16;
     let dada_key = 0xbeef;
 
     // Open the memory-mapped device
@@ -101,7 +101,7 @@ fn main() -> std::io::Result<()> {
                 match SlicedPacket::from_ethernet(&framed_packet.data[82..]) {
                     Ok(v) => {
                         if let Some(TransportSlice::Udp(udp_header)) = v.transport {
-                            let n = udp_header.length();
+                            let n = udp_header.length() - 8; // Remove the 8 byte UDP header
                             let dest_port = udp_header.destination_port();
                             if n as usize != PAYLOAD_SIZE || dest_port != port {
                                 eprintln!("Bad port ({}) or size ({})", dest_port, n);
