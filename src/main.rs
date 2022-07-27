@@ -58,6 +58,7 @@ fn stokes_to_dada(
         cnt += PAYLOAD_SIZE;
 
         if sums == AVG_SIZE {
+            println!("Avg complete");
             // Generate the header
             let now = Utc::now();
             let timestamp = format!(
@@ -82,7 +83,7 @@ fn main() -> std::io::Result<()> {
     // Get these from args
     let device_name = "enp129s0f0";
     let port = 6000u16;
-    let dada_key = 0xdead;
+    let dada_key = 0xbeef;
 
     // Open the memory-mapped device
     let mut ring = Ring::from_if_name(device_name).unwrap();
@@ -115,7 +116,6 @@ fn main() -> std::io::Result<()> {
                         }
                     }
                     Err(e) => {
-                        eprintln!("Malformed ethernet packet - {}", e);
                         continue;
                     }
                 }
