@@ -108,6 +108,7 @@ fn main() -> std::io::Result<()> {
                                 continue;
                             }
                             // Build spectra from payload
+                            println!("{}", v.payload.len());
                             payload_to_spectra(v.payload, &mut pol_x, &mut pol_y);
                             // Send to channel
                             sender.send((pol_x, pol_y)).unwrap();
