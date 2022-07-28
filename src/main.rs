@@ -19,7 +19,6 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
     let mut first_sample_time = Utc::now();
 
     let mut last_avg = Instant::now();
-
     for stokes in receiver {
         println!("Avg time - {}", last_avg.elapsed().as_secs_f32());
         last_avg = Instant::now();
@@ -62,9 +61,14 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
     let mut avg_cnt = 0usize;
     // Capture packets
     let mut iter = udp_packet_iter(&mut udp_rx);
+
+    let mut last_avg = Instant::now();
     loop {
         match iter.next() {
             Ok((packet, _)) => {
+                println!("Udp time - {}", last_avg.elapsed().as_secs_f32());
+                last_avg = Instant::now();
+
                 // Skip invalid packets
                 if packet.get_destination() != port {
                     continue;
