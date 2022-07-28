@@ -131,7 +131,7 @@ fn main() -> std::io::Result<()> {
     // We'll use a mutex to hold the average that we'll pass to the dada consumer
     let avg_mutex = Arc::new(Mutex::new([0i16; CHANNELS]));
     // And then use a channel for state messaging
-    let (sig_tx, sig_rx) = unbounded();
+    let (sig_tx, sig_rx) = bounded(5);
 
     // Make a clone we'll move to the thread
     let avg_cloned = avg_mutex.clone();
