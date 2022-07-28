@@ -27,7 +27,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
         // Increment the stokes counter
         stokes_cnt += 1;
         // If we've filled the window, generate the header and send the whole thing
-        if stokes_cnt == WINDOW_SIZE {
+        if stokes_cnt == (WINDOW_SIZE - 1) {
             // Reset the stokes counter
             stokes_cnt = 0;
             // Most of these should be constants or set by args
@@ -74,7 +74,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
                 let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
                 gen_stokes_i(&pol_x, &pol_y, avg_slice);
                 avg_cnt += 1;
-                if avg_cnt == CHANNELS {
+                if avg_cnt == (CHANNELS - 1) {
                     // Reset the counter
                     avg_cnt = 0;
                     // Generate average
