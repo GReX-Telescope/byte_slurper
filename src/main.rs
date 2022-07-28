@@ -20,7 +20,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
 
     let mut last_avg = Instant::now();
     for stokes in receiver {
-        println!("Avg time - {}", last_avg.elapsed().as_secs_f32());
+        println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
         last_avg = Instant::now();
         // Push the incoming average to the right place in the output
         window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
@@ -45,8 +45,8 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
                 TSAMP * 1e6,
                 &heimdall_timestamp(first_sample_time),
             );
-            writer.push_header(&header).unwrap();
-            writer.push(window.as_byte_slice()).unwrap();
+            // writer.push_header(&header).unwrap();
+            // writer.push(window.as_byte_slice()).unwrap();
         }
     }
 }
@@ -66,7 +66,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
     loop {
         match iter.next() {
             Ok((packet, _)) => {
-                println!("Udp time - {}", last_avg.elapsed().as_secs_f32());
+                println!("Udp time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
                 last_avg = Instant::now();
 
                 // Skip invalid packets
