@@ -96,19 +96,20 @@ fn udp_to_avg(
                 }
                 // Unpack
                 payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
-                // Generate stokes and push to averaging window
-                let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
-                gen_stokes_i(&pol_x, &pol_y, avg_slice);
-                avg_cnt += 1;
-                if avg_cnt == AVG_SIZE {
-                    // Reset the counter
-                    avg_cnt = 0;
-                    // Generate average
-                    let mut avg = *avg_mutex.lock().unwrap();
-                    avg_from_window(&avg_window, &mut avg, CHANNELS);
-                    // Signal the consumer that there's new data
-                    sig_tx.send(Signal::NewAvg).unwrap();
-                }
+                sig_tx.send(Signal::NewAvg).unwrap();
+                // // Generate stokes and push to averaging window
+                // let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
+                // gen_stokes_i(&pol_x, &pol_y, avg_slice);
+                // avg_cnt += 1;
+                // if avg_cnt == AVG_SIZE {
+                //     // Reset the counter
+                //     avg_cnt = 0;
+                //     // Generate average
+                //     let mut avg = *avg_mutex.lock().unwrap();
+                //     avg_from_window(&avg_window, &mut avg, CHANNELS);
+                //     // Signal the consumer that there's new data
+                //     sig_tx.send(Signal::NewAvg).unwrap();
+                // }
             }
             Err(e) => {
                 eprintln!("Packet next error - {}", e);
