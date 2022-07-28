@@ -39,37 +39,37 @@ fn stokes_to_dada(
                 break;
             }
             Signal::NewAvg => {
-                println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
-                last_avg = Instant::now();
-                // Get a lock of the avg shared memory
-                let avg = *avg_mutex.lock().unwrap();
-                // Push the incoming average to the right place in the output
-                window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
-                    .copy_from_slice(&avg);
-                // If this was the first one, update the start time
-                if stokes_cnt == 0 {
-                    first_sample_time = Utc::now();
-                }
-                // Increment the stokes counter
-                stokes_cnt += 1;
-                // If we've filled the window, generate the header and send the whole thing
-                if stokes_cnt == NSAMP {
-                    println!("New window");
-                    // Reset the stokes counter
-                    stokes_cnt = 0;
-                    // Most of these should be constants or set by args
-                    let header = gen_header(
-                        CHANNELS as u32,
-                        250f32,
-                        1405f32,
-                        1,
-                        16,
-                        TSAMP * 1e6,
-                        &heimdall_timestamp(first_sample_time),
-                    );
-                    writer.push_header(&header).unwrap();
-                    writer.push(window.as_byte_slice()).unwrap();
-                }
+                // println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
+                // last_avg = Instant::now();
+                // // Get a lock of the avg shared memory
+                // let avg = *avg_mutex.lock().unwrap();
+                // // Push the incoming average to the right place in the output
+                // window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
+                //     .copy_from_slice(&avg);
+                // // If this was the first one, update the start time
+                // if stokes_cnt == 0 {
+                //     first_sample_time = Utc::now();
+                // }
+                // // Increment the stokes counter
+                // stokes_cnt += 1;
+                // // If we've filled the window, generate the header and send the whole thing
+                // if stokes_cnt == NSAMP {
+                //     println!("New window");
+                //     // Reset the stokes counter
+                //     stokes_cnt = 0;
+                //     // Most of these should be constants or set by args
+                //     let header = gen_header(
+                //         CHANNELS as u32,
+                //         250f32,
+                //         1405f32,
+                //         1,
+                //         16,
+                //         TSAMP * 1e6,
+                //         &heimdall_timestamp(first_sample_time),
+                //     );
+                //     writer.push_header(&header).unwrap();
+                //     writer.push(window.as_byte_slice()).unwrap();
+                // }
             }
         }
     }
