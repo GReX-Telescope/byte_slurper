@@ -19,6 +19,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
     let mut first_sample_time = Utc::now();
 
     for stokes in receiver {
+        println!("New avg");
         // Push the incoming average to the right place in the output
         window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
         // If this was the first one, update the start time
@@ -29,6 +30,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
         stokes_cnt += 1;
         // If we've filled the window, generate the header and send the whole thing
         if stokes_cnt == NSAMP {
+            println!("New window");
             // Reset the stokes counter
             stokes_cnt = 0;
             // Most of these should be constants or set by args
@@ -41,7 +43,6 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
                 TSAMP * 1e6,
                 &heimdall_timestamp(first_sample_time),
             );
-            println!("Sending data to heimdall via PSRDADA");
             writer.push_header(&header).unwrap();
             writer.push(window.as_byte_slice()).unwrap();
         }
@@ -61,6 +62,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
     loop {
         match iter.next() {
             Ok((packet, _)) => {
+                println!("New UDP");
                 // Skip invalid packets
                 if packet.get_destination() != port {
                     continue;
