@@ -9,7 +9,7 @@ use pnet::{
         TransportReceiver,
     },
 };
-use psrdada::DadaDBBuilder;
+use psrdada::{DadaDB, DadaDBBuilder};
 use std::{
     default::Default,
     sync::{Arc, Mutex},
@@ -139,10 +139,12 @@ fn main() -> std::io::Result<()> {
     thread::spawn(move || udp_to_avg(udp_rx, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
-    let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
-        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-        .build(true) // Memlock
-        .unwrap();
+    // let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
+    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+    //     .build(true) // Memlock
+    //     .unwrap();
+
+    let hdu = DadaDB::connect(dada_key, "byte_slurper").unwrap();
 
     let (_, writer) = hdu.split();
 
