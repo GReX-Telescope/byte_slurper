@@ -102,7 +102,7 @@ fn main() -> std::io::Result<()> {
         .expect("Error creating transport channel");
 
     // Setup multithreading
-    let (stokes_sender, stokes_receiver) = bounded(1000);
+    let (stokes_sender, stokes_receiver) = bounded(1);
 
     // Start producing polarizations on a thread
     thread::spawn(move || udp_to_avg(udp_rx, port, stokes_sender));
