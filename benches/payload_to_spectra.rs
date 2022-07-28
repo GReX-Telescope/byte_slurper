@@ -2,6 +2,10 @@ use byte_slurper::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::prelude::*;
 
+fn clone_from_boxed(to: &mut Box<[i16]>, from: &[i16]) {
+    to[0..2048].clone_from_slice(from);
+}
+
 fn benchmark(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
@@ -14,6 +18,7 @@ fn benchmark(c: &mut Criterion) {
     let mut spectra = [0i16; CHANNELS];
 
     let avging_window = [0i16; AVG_WINDOW_SIZE];
+    let mut window = vec![0i16; WINDOW_SIZE].into_boxed_slice();
 
     c.bench_function("payload_to_spectra", |b| {
         b.iter(|| {
@@ -43,6 +48,10 @@ fn benchmark(c: &mut Criterion) {
                 black_box(&mut spectra),
             )
         })
+    });
+
+    c.bench_function("Clone from heap slice", |b| {
+        b.iter(|| clone_from_boxed(black_box(&mut window), &spectra))
     });
 }
 

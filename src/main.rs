@@ -22,32 +22,32 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
     for stokes in receiver {
         println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
         last_avg = Instant::now();
-        // Push the incoming average to the right place in the output
-        window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
-        // If this was the first one, update the start time
-        if stokes_cnt == 0 {
-            first_sample_time = Utc::now();
-        }
-        // Increment the stokes counter
-        stokes_cnt += 1;
-        // If we've filled the window, generate the header and send the whole thing
-        if stokes_cnt == NSAMP {
-            println!("New window");
-            // Reset the stokes counter
-            stokes_cnt = 0;
-            // Most of these should be constants or set by args
-            // let header = gen_header(
-            //     CHANNELS as u32,
-            //     250f32,
-            //     1405f32,
-            //     1,
-            //     16,
-            //     TSAMP * 1e6,
-            //     &heimdall_timestamp(first_sample_time),
-            // );
-            // writer.push_header(&header).unwrap();
-            // writer.push(window.as_byte_slice()).unwrap();
-        }
+        // // Push the incoming average to the right place in the output
+        // window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
+        // // If this was the first one, update the start time
+        // if stokes_cnt == 0 {
+        //     first_sample_time = Utc::now();
+        // }
+        // // Increment the stokes counter
+        // stokes_cnt += 1;
+        // // If we've filled the window, generate the header and send the whole thing
+        // if stokes_cnt == NSAMP {
+        //     println!("New window");
+        //     // // Reset the stokes counter
+        //     // stokes_cnt = 0;
+        //     // // Most of these should be constants or set by args
+        //     // let header = gen_header(
+        //     //     CHANNELS as u32,
+        //     //     250f32,
+        //     //     1405f32,
+        //     //     1,
+        //     //     16,
+        //     //     TSAMP * 1e6,
+        //     //     &heimdall_timestamp(first_sample_time),
+        //     // );
+        //     // writer.push_header(&header).unwrap();
+        //     // writer.push(window.as_byte_slice()).unwrap();
+        // }
     }
 }
 
@@ -61,14 +61,9 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
     let mut avg_cnt = 0usize;
     // Capture packets
     let mut iter = udp_packet_iter(&mut udp_rx);
-
-    let mut last_avg = Instant::now();
     loop {
         match iter.next() {
             Ok((packet, _)) => {
-                println!("Udp time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
-                last_avg = Instant::now();
-
                 // Skip invalid packets
                 if packet.get_destination() != port {
                     continue;
