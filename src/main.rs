@@ -1,7 +1,7 @@
 use byte_slice_cast::AsByteSlice;
 use byte_slurper::*;
 use chrono::Utc;
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use pnet::{
     packet::{ip::IpNextHeaderProtocols, Packet},
     transport::{
@@ -89,7 +89,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
                     // Generate average
                     avg_from_window(&avg_window, &mut avg, CHANNELS);
                     // Send to channel
-                    //sender.send(avg).unwrap();
+                    sender.send(avg).unwrap();
                 }
             }
             Err(e) => {
@@ -109,7 +109,7 @@ fn main() -> std::io::Result<()> {
         .expect("Error creating transport channel");
 
     // Setup multithreading
-    let (stokes_sender, stokes_receiver) = bounded(1000000);
+    let (stokes_sender, stokes_receiver) = unbounded();
 
     // Start producing polarizations on a thread
     thread::spawn(move || udp_to_avg(udp_rx, port, stokes_sender));
