@@ -2,7 +2,7 @@ use byte_slurper::*;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::prelude::*;
 
-fn criterion_benchmark(c: &mut Criterion) {
+fn benchmark(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
     let mut dummy_payload = [0u8; PAYLOAD_SIZE];
@@ -11,8 +11,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Containers
     let mut pol_a = [ComplexByte::default(); CHANNELS];
     let mut pol_b = [ComplexByte::default(); CHANNELS];
-    let zeros = [0f32; CHANNELS];
-    let mut spectra = [0f32; CHANNELS];
+    let mut spectra = [0i16; CHANNELS];
+
+    let avging_window = [0i16; AVG_WINDOW_SIZE];
 
     c.bench_function("payload_to_spectra", |b| {
         b.iter(|| {
@@ -24,19 +25,19 @@ fn criterion_benchmark(c: &mut Criterion) {
         })
     });
 
-    c.bench_function("vsum_mut", |b| {
+    c.bench_function("avg_from_window", |b| {
         b.iter(|| {
-            vsum_mut(
-                black_box(&zeros),
+            avg_from_window(
+                black_box(&avging_window),
                 black_box(&mut spectra),
-                black_box(8192u32),
+                black_box(CHANNELS),
             )
         })
     });
 
     c.bench_function("stokes", |b| {
         b.iter(|| {
-            stokes_i(
+            gen_stokes_i(
                 black_box(&pol_a),
                 black_box(&pol_b),
                 black_box(&mut spectra),
@@ -45,5 +46,5 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, benchmark);
 criterion_main!(benches);

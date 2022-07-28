@@ -1,83 +1,79 @@
+use byte_slice_cast::AsByteSlice;
 use byte_slurper::*;
-use chrono::{Datelike, Timelike, Utc};
+use chrono::Utc;
 use crossbeam_channel::{bounded, Receiver};
-use pnet::packet::ip::IpNextHeaderProtocols;
-use pnet::packet::Packet;
-use pnet::transport::{transport_channel, udp_packet_iter};
-use pnet::transport::{TransportChannelType::Layer4, TransportProtocol::Ipv4};
+use pnet::{
+    packet::{ip::IpNextHeaderProtocols, Packet},
+    transport::{
+        transport_channel, udp_packet_iter, TransportChannelType::Layer4, TransportProtocol::Ipv4,
+    },
+};
 use psrdada::DadaDBBuilder;
-use std::thread;
-use std::{collections::HashMap, default::Default};
-
-const AVG_SIZE: usize = 1024;
-
-fn gen_header(
-    nchan: u32,
-    bw: f32,
-    freq: f32,
-    npol: u32,
-    nbit: u32,
-    tsamp: f32,
-    utc_start: &str,
-) -> HashMap<String, String> {
-    HashMap::from([
-        ("NCHAN".to_owned(), nchan.to_string()),
-        ("BW".to_owned(), bw.to_string()),
-        ("FREQ".to_owned(), freq.to_string()),
-        ("NPOL".to_owned(), npol.to_string()),
-        ("NBIT".to_owned(), nbit.to_string()),
-        ("TSAMP".to_owned(), tsamp.to_string()),
-        ("UTC_START".to_owned(), utc_start.to_owned()),
-    ])
-}
+use std::{default::Default, thread};
 
 fn stokes_to_dada(
-    reciever: Receiver<([ComplexByte; 2048], [ComplexByte; 2048])>,
-    writer: psrdada::WriteHalf,
+    reciever: Receiver<([ComplexByte; CHANNELS], [ComplexByte; CHANNELS])>,
+    mut writer: psrdada::WriteHalf,
 ) {
-    let mut stokes = [0f32; CHANNELS];
-    let mut stokes_accum = [0f32; CHANNELS];
+    let mut avg_window = [0i16; AVG_WINDOW_SIZE];
+    let mut window = [0i16; WINDOW_SIZE];
 
-    let mut sums = 0usize;
-    let mut cnt = 0usize;
+    let mut avg_cnt = 0usize;
+    let mut stokes_cnt = 0usize;
+
+    let mut first_sample_time = Utc::now();
 
     for (pol_x, pol_y) in reciever {
-        // Grab from channel
-        stokes_i(&pol_x, &pol_y, &mut stokes);
-        // Sum stokes
-        vsum_mut(&stokes, &mut stokes_accum, AVG_SIZE as u32);
+        let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
+        // Grab from channel and push stokes to average
+        gen_stokes_i(&pol_x, &pol_y, avg_slice);
+        avg_cnt += 1;
 
-        // Metrics
-        sums += 1;
-        cnt += PAYLOAD_SIZE;
+        if avg_cnt == (AVG_SIZE - 1) {
+            // Average the averaging window, push to output window
+            let stokes_slice = &mut window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)];
+            avg_from_window(&avg_window, stokes_slice, CHANNELS);
+            // Reset the counter
+            avg_cnt = 0;
 
-        if sums == AVG_SIZE {
-            println!("Avg complete");
-            // Generate the header
-            let now = Utc::now();
-            let timestamp = format!(
-                "{}-{:02}-{:02}-{:02}:{:02}:{:02}",
-                now.year(),
-                now.month(),
-                now.day(),
-                now.hour(),
-                now.minute(),
-                now.second()
-            );
-            let header = gen_header(CHANNELS as u32, 250f32, 1405f32, 1, 16, 0.001, &timestamp);
-            // Resets
-            stokes_accum = [0f32; CHANNELS];
-            sums = 0;
-            cnt = 0;
+            // If this is the first sample in the output window, mark the time
+            if stokes_cnt == 0 {
+                first_sample_time = Utc::now();
+            }
+
+            // If we've filled the window
+            // generate the header and send the whole thing
+            if stokes_cnt == (WINDOW_SIZE - 1) {
+                // Reset the counter
+                stokes_cnt = 0;
+                // Most of these should be constants or set by args
+                let header = gen_header(
+                    CHANNELS as u32,
+                    250f32,
+                    1405f32,
+                    1,
+                    16,
+                    TSAMP,
+                    &heimdall_timestamp(first_sample_time),
+                );
+                writer.push_header(&header).unwrap();
+                writer.push(window.as_byte_slice()).unwrap();
+            }
         }
     }
 }
 
 fn main() -> std::io::Result<()> {
     // Get these from args
-    let device_name = "enp129s0f0";
     let port = 60000u16;
     let dada_key = 0xbeef;
+
+    // Deal with shutdowns properly
+    ctrlc::set_handler(move || {
+        println!("Bringing down!");
+        std::process::exit(0);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     // We're going to be looking at Layer 4, IpV4, UDP data
     let (_, mut udp_rx) =
@@ -116,11 +112,11 @@ fn main() -> std::io::Result<()> {
 
     // Setup PSRDADA
     let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
-        .buf_size(CHANNELS as u64 * 2) // We're going to send u16
+        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .build(true) // Memlock
         .unwrap();
 
-    let (_, mut writer) = hdu.split();
+    let (_, writer) = hdu.split();
 
     // Start consumer
     stokes_to_dada(receiver, writer);

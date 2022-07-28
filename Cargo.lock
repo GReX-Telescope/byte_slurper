@@ -89,6 +89,7 @@ dependencies = [
  "chrono",
  "criterion",
  "crossbeam-channel",
+ "ctrlc",
  "num-complex",
  "num-traits",
  "pnet",
@@ -286,6 +287,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b2466559f260f48ad25fe6317b3c8dac77b5bdb5763ac7d9d6103530663bc90"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "ctrlc"
+version = "3.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b37feaa84e6861e00a1f5e5aa8da3ee56d605c9992d33e082786754828e20865"
+dependencies = [
+ "nix",
+ "winapi",
 ]
 
 [[package]]
@@ -544,6 +555,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf5a574dadd7941adeaa71823ecba5e28331b8313fb2e1c6a5c7e5981ea53ad6"
 
 [[package]]
+name = "nix"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "nom"
 version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -798,7 +820,7 @@ dependencies = [
 [[package]]
 name = "psrdada"
 version = "0.1.0"
-source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#38c6ead65aef924b944b9d3fcb5e840a4449a40a"
+source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#d93b73a0a2230b8b06ea510fd11c3c85bcddad55"
 dependencies = [
  "itertools",
  "lending-iterator",
@@ -810,7 +832,7 @@ dependencies = [
 [[package]]
 name = "psrdada-sys"
 version = "0.0.0"
-source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#38c6ead65aef924b944b9d3fcb5e840a4449a40a"
+source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#d93b73a0a2230b8b06ea510fd11c3c85bcddad55"
 dependencies = [
  "bindgen",
  "cc",
