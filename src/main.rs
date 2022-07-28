@@ -10,7 +10,7 @@ use pnet::{
     },
 };
 use psrdada::DadaDBBuilder;
-use std::{default::Default, thread};
+use std::{default::Default, thread, time::Instant};
 
 fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::WriteHalf) {
     // Allocate window on the heap to avoid a stack overflow
@@ -18,8 +18,11 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
     let mut stokes_cnt = 0usize;
     let mut first_sample_time = Utc::now();
 
+    let mut last_avg = Instant::now();
+
     for stokes in receiver {
-        println!("New avg");
+        println!("Avg time - {}", last_avg.elapsed().as_secs_f32());
+        last_avg = Instant::now();
         // Push the incoming average to the right place in the output
         window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
         // If this was the first one, update the start time
