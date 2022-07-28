@@ -13,7 +13,8 @@ use psrdada::DadaDBBuilder;
 use std::{default::Default, thread};
 
 fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::WriteHalf) {
-    let mut window = [0i16; WINDOW_SIZE];
+    // Allocate window on the heap to avoid a stack overflow
+    let mut window = vec![0i16; WINDOW_SIZE].into_boxed_slice();
     let mut stokes_cnt = 0usize;
     let mut first_sample_time = Utc::now();
 
