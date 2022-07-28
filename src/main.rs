@@ -62,7 +62,6 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
     loop {
         match iter.next() {
             Ok((packet, _)) => {
-                println!("New UDP");
                 // Skip invalid packets
                 if packet.get_destination() != port {
                     continue;
