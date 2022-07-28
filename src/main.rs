@@ -39,8 +39,8 @@ fn stokes_to_dada(
                 break;
             }
             Signal::NewAvg => {
-                // println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
-                // last_avg = Instant::now();
+                println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
+                last_avg = Instant::now();
                 // // Get a lock of the avg shared memory
                 // let avg = *avg_mutex.lock().unwrap();
                 // // Push the incoming average to the right place in the output
