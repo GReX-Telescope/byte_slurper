@@ -36,15 +36,15 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
             // Reset the stokes counter
             stokes_cnt = 0;
             // Most of these should be constants or set by args
-            let header = gen_header(
-                CHANNELS as u32,
-                250f32,
-                1405f32,
-                1,
-                16,
-                TSAMP * 1e6,
-                &heimdall_timestamp(first_sample_time),
-            );
+            // let header = gen_header(
+            //     CHANNELS as u32,
+            //     250f32,
+            //     1405f32,
+            //     1,
+            //     16,
+            //     TSAMP * 1e6,
+            //     &heimdall_timestamp(first_sample_time),
+            // );
             // writer.push_header(&header).unwrap();
             // writer.push(window.as_byte_slice()).unwrap();
         }
