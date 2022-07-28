@@ -89,7 +89,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
                     // Generate average
                     avg_from_window(&avg_window, &mut avg, CHANNELS);
                     // Send to channel
-                    sender.send(avg).unwrap();
+                    //sender.send(avg).unwrap();
                 }
             }
             Err(e) => {
