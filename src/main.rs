@@ -56,6 +56,7 @@ fn stokes_to_dada(
                     TSAMP,
                     &heimdall_timestamp(first_sample_time),
                 );
+                println!("Sending data to heimdall via PSRDADA");
                 writer.push_header(&header).unwrap();
                 writer.push(window.as_byte_slice()).unwrap();
             }
