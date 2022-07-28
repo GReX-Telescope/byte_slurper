@@ -28,19 +28,18 @@ fn stokes_to_dada(
         // Grab from channel and push stokes to average
         gen_stokes_i(&pol_x, &pol_y, avg_slice);
         avg_cnt += 1;
-
         if avg_cnt == (AVG_SIZE - 1) {
-            // Average the averaging window, push to output window
-            let stokes_slice = &mut window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)];
-            avg_from_window(&avg_window, stokes_slice, CHANNELS);
-            // Reset the averaging counter
-            avg_cnt = 0;
-
             // If this is the first sample in the output window, mark the time
             if stokes_cnt == 0 {
                 first_sample_time = Utc::now();
             }
-
+            // Average the averaging window, push to output window
+            let stokes_slice = &mut window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)];
+            avg_from_window(&avg_window, stokes_slice, CHANNELS);
+            // Increment the stokes counter
+            stokes_cnt += 1;
+            // Reset the averaging counter
+            avg_cnt = 0;
             // If we've filled the window
             // generate the header and send the whole thing
             if stokes_cnt == (WINDOW_SIZE - 1) {
@@ -60,9 +59,6 @@ fn stokes_to_dada(
                 writer.push_header(&header).unwrap();
                 writer.push(window.as_byte_slice()).unwrap();
             }
-
-            // Increment the stokes counter
-            stokes_cnt += 1;
         }
     }
 }
