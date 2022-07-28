@@ -12,7 +12,7 @@ use pnet::{
 use psrdada::DadaDBBuilder;
 use std::{default::Default, thread, time::Instant};
 
-fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::WriteHalf) {
+fn stokes_to_dada(receiver: Receiver<Vec<i16>>, mut writer: psrdada::WriteHalf) {
     // Allocate window on the heap to avoid a stack overflow
     let mut window = vec![0i16; WINDOW_SIZE].into_boxed_slice();
     let mut stokes_cnt = 0usize;
@@ -22,36 +22,36 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
     for stokes in receiver {
         println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
         last_avg = Instant::now();
-        // // Push the incoming average to the right place in the output
-        // window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
-        // // If this was the first one, update the start time
-        // if stokes_cnt == 0 {
-        //     first_sample_time = Utc::now();
-        // }
-        // // Increment the stokes counter
-        // stokes_cnt += 1;
-        // // If we've filled the window, generate the header and send the whole thing
-        // if stokes_cnt == NSAMP {
-        //     println!("New window");
-        //     // // Reset the stokes counter
-        //     // stokes_cnt = 0;
-        //     // // Most of these should be constants or set by args
-        //     // let header = gen_header(
-        //     //     CHANNELS as u32,
-        //     //     250f32,
-        //     //     1405f32,
-        //     //     1,
-        //     //     16,
-        //     //     TSAMP * 1e6,
-        //     //     &heimdall_timestamp(first_sample_time),
-        //     // );
-        //     // writer.push_header(&header).unwrap();
-        //     // writer.push(window.as_byte_slice()).unwrap();
-        // }
+        // Push the incoming average to the right place in the output
+        window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
+        // If this was the first one, update the start time
+        if stokes_cnt == 0 {
+            first_sample_time = Utc::now();
+        }
+        // Increment the stokes counter
+        stokes_cnt += 1;
+        // If we've filled the window, generate the header and send the whole thing
+        if stokes_cnt == NSAMP {
+            println!("New window");
+            // Reset the stokes counter
+            stokes_cnt = 0;
+            // Most of these should be constants or set by args
+            let header = gen_header(
+                CHANNELS as u32,
+                250f32,
+                1405f32,
+                1,
+                16,
+                TSAMP * 1e6,
+                &heimdall_timestamp(first_sample_time),
+            );
+            writer.push_header(&header).unwrap();
+            writer.push(window.as_byte_slice()).unwrap();
+        }
     }
 }
 
-fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHANNELS]>) {
+fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<Vec<i16>>) {
     // Locals
     let mut pol_x = [ComplexByte::default(); CHANNELS];
     let mut pol_y = [ComplexByte::default(); CHANNELS];
@@ -84,7 +84,7 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<[i16; CHA
                     // Generate average
                     avg_from_window(&avg_window, &mut avg, CHANNELS);
                     // Send to channel
-                    sender.send(avg).unwrap();
+                    sender.send(avg.to_vec()).unwrap();
                 }
             }
             Err(e) => {
