@@ -113,3 +113,8 @@ pub fn heimdall_timestamp(time: DateTime<Utc>) -> String {
         time.second()
     )
 }
+
+pub enum Signal {
+    NewAvg,
+    Stop,
+}

@@ -17,11 +17,6 @@ use std::{
     time::Instant,
 };
 
-enum Signal {
-    NewAvg,
-    Stop,
-}
-
 fn stokes_to_dada(
     avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
     mut writer: psrdada::WriteHalf,
@@ -33,8 +28,8 @@ fn stokes_to_dada(
     let mut first_sample_time = Utc::now();
 
     let mut last_avg = Instant::now();
-    for signal in sig_rx {
-        match signal {
+    loop {
+        match sig_rx.recv().unwrap() {
             Signal::Stop => {
                 break;
             }

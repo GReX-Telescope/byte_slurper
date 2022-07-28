@@ -27,4 +27,4 @@ panic = "abort"
 
 [[bench]]
 harness = false
-name = "payload_to_spectra"
+name = "benches"
