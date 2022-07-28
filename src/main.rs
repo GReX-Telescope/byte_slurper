@@ -1,7 +1,7 @@
 use byte_slice_cast::AsByteSlice;
 use byte_slurper::*;
 use chrono::Utc;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
 use pnet::{
     packet::{ip::IpNextHeaderProtocols, Packet},
     transport::{
