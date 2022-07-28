@@ -85,37 +85,36 @@ fn udp_to_avg(
     // Capture packets
     let mut iter = udp_packet_iter(&mut udp_rx);
     loop {
-        sig_tx.send(Signal::NewAvg).unwrap();
-        // match iter.next() {
-        //     Ok((packet, _)) => {
-        //         // Skip invalid packets
-        //         if packet.get_destination() != port {
-        //             continue;
-        //         }
-        //         if packet.get_length() as usize != PAYLOAD_SIZE {
-        //             continue;
-        //         }
-        //         // Unpack
-        //         // payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
-        //         // sig_tx.send(Signal::NewAvg).unwrap();
-        //         // // Generate stokes and push to averaging window
-        //         // let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
-        //         // gen_stokes_i(&pol_x, &pol_y, avg_slice);
-        //         // avg_cnt += 1;
-        //         // if avg_cnt == AVG_SIZE {
-        //         //     // Reset the counter
-        //         //     avg_cnt = 0;
-        //         //     // Generate average
-        //         //     let mut avg = *avg_mutex.lock().unwrap();
-        //         //     avg_from_window(&avg_window, &mut avg, CHANNELS);
-        //         //     // Signal the consumer that there's new data
-        //         //     sig_tx.send(Signal::NewAvg).unwrap();
-        //         // }
-        //     }
-        //     Err(e) => {
-        //         eprintln!("Packet next error - {}", e);
-        //     }
-        //  }
+        match iter.next() {
+            Ok((packet, _)) => {
+                // Skip invalid packets
+                // if packet.get_destination() != port {
+                //     continue;
+                // }
+                // if packet.get_length() as usize != PAYLOAD_SIZE {
+                //     continue;
+                // }
+                // Unpack
+                // payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
+                sig_tx.send(Signal::NewAvg).unwrap();
+                // // Generate stokes and push to averaging window
+                // let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
+                // gen_stokes_i(&pol_x, &pol_y, avg_slice);
+                // avg_cnt += 1;
+                // if avg_cnt == AVG_SIZE {
+                //     // Reset the counter
+                //     avg_cnt = 0;
+                //     // Generate average
+                //     let mut avg = *avg_mutex.lock().unwrap();
+                //     avg_from_window(&avg_window, &mut avg, CHANNELS);
+                //     // Signal the consumer that there's new data
+                //     sig_tx.send(Signal::NewAvg).unwrap();
+                // }
+            }
+            Err(e) => {
+                eprintln!("Packet next error - {}", e);
+            }
+        }
     }
 }
 
