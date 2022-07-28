@@ -33,7 +33,7 @@ fn stokes_to_dada(
             // Average the averaging window, push to output window
             let stokes_slice = &mut window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)];
             avg_from_window(&avg_window, stokes_slice, CHANNELS);
-            // Reset the counter
+            // Reset the averaging counter
             avg_cnt = 0;
 
             // If this is the first sample in the output window, mark the time
@@ -60,6 +60,9 @@ fn stokes_to_dada(
                 writer.push_header(&header).unwrap();
                 writer.push(window.as_byte_slice()).unwrap();
             }
+
+            // Increment the stokes counter
+            stokes_cnt += 1;
         }
     }
 }
