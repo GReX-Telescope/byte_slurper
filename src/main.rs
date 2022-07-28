@@ -27,7 +27,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
         // Increment the stokes counter
         stokes_cnt += 1;
         // If we've filled the window, generate the header and send the whole thing
-        if stokes_cnt == WINDOW_SIZE {
+        if stokes_cnt == NSAMP {
             // Reset the stokes counter
             stokes_cnt = 0;
             // Most of these should be constants or set by args
