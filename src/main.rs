@@ -10,54 +10,82 @@ use pnet::{
     },
 };
 use psrdada::DadaDBBuilder;
-use std::{default::Default, thread, time::Instant};
+use std::{
+    default::Default,
+    sync::{Arc, Mutex},
+    thread,
+    time::Instant,
+};
 
-fn stokes_to_dada(receiver: Receiver<Vec<i16>>, mut writer: psrdada::WriteHalf) {
+enum Signal {
+    NewAvg,
+    Stop,
+}
+
+fn stokes_to_dada(
+    avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
+    mut writer: psrdada::WriteHalf,
+    sig_rx: Receiver<Signal>,
+) {
     // Allocate window on the heap to avoid a stack overflow
     let mut window = vec![0i16; WINDOW_SIZE].into_boxed_slice();
     let mut stokes_cnt = 0usize;
     let mut first_sample_time = Utc::now();
 
     let mut last_avg = Instant::now();
-    for stokes in receiver {
-        println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
-        last_avg = Instant::now();
-        // Push the incoming average to the right place in the output
-        window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)].clone_from_slice(&stokes);
-        // If this was the first one, update the start time
-        if stokes_cnt == 0 {
-            first_sample_time = Utc::now();
-        }
-        // Increment the stokes counter
-        stokes_cnt += 1;
-        // If we've filled the window, generate the header and send the whole thing
-        if stokes_cnt == NSAMP {
-            println!("New window");
-            // Reset the stokes counter
-            stokes_cnt = 0;
-            // Most of these should be constants or set by args
-            let header = gen_header(
-                CHANNELS as u32,
-                250f32,
-                1405f32,
-                1,
-                16,
-                TSAMP * 1e6,
-                &heimdall_timestamp(first_sample_time),
-            );
-            writer.push_header(&header).unwrap();
-            writer.push(window.as_byte_slice()).unwrap();
+    for signal in sig_rx {
+        match signal {
+            Signal::Stop => {
+                break;
+            }
+            Signal::NewAvg => {
+                println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
+                last_avg = Instant::now();
+                // Get a lock of the avg shared memory
+                let avg = *avg_mutex.lock().unwrap();
+                // Push the incoming average to the right place in the output
+                window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
+                    .copy_from_slice(&avg);
+                // If this was the first one, update the start time
+                if stokes_cnt == 0 {
+                    first_sample_time = Utc::now();
+                }
+                // Increment the stokes counter
+                stokes_cnt += 1;
+                // If we've filled the window, generate the header and send the whole thing
+                if stokes_cnt == NSAMP {
+                    println!("New window");
+                    // Reset the stokes counter
+                    stokes_cnt = 0;
+                    // Most of these should be constants or set by args
+                    let header = gen_header(
+                        CHANNELS as u32,
+                        250f32,
+                        1405f32,
+                        1,
+                        16,
+                        TSAMP * 1e6,
+                        &heimdall_timestamp(first_sample_time),
+                    );
+                    writer.push_header(&header).unwrap();
+                    writer.push(window.as_byte_slice()).unwrap();
+                }
+            }
         }
     }
 }
 
-fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<Vec<i16>>) {
+fn udp_to_avg(
+    mut udp_rx: TransportReceiver,
+    port: u16,
+    avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
+    sig_tx: Sender<Signal>,
+) {
     // Locals
     let mut pol_x = [ComplexByte::default(); CHANNELS];
     let mut pol_y = [ComplexByte::default(); CHANNELS];
     // State to hold the averaging window
     let mut avg_window = [0i16; AVG_WINDOW_SIZE];
-    let mut avg = [0i16; CHANNELS];
     let mut avg_cnt = 0usize;
     // Capture packets
     let mut iter = udp_packet_iter(&mut udp_rx);
@@ -73,7 +101,6 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<Vec<i16>>
                 }
                 // Unpack
                 payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
-                // --- Average
                 // Generate stokes and push to averaging window
                 let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
                 gen_stokes_i(&pol_x, &pol_y, avg_slice);
@@ -82,9 +109,10 @@ fn udp_to_avg(mut udp_rx: TransportReceiver, port: u16, sender: Sender<Vec<i16>>
                     // Reset the counter
                     avg_cnt = 0;
                     // Generate average
+                    let mut avg = *avg_mutex.lock().unwrap();
                     avg_from_window(&avg_window, &mut avg, CHANNELS);
-                    // Send to channel
-                    sender.send(avg.to_vec()).unwrap();
+                    // Signal the consumer that there's new data
+                    sig_tx.send(Signal::NewAvg).unwrap();
                 }
             }
             Err(e) => {
@@ -104,10 +132,16 @@ fn main() -> std::io::Result<()> {
         .expect("Error creating transport channel");
 
     // Setup multithreading
-    let (stokes_sender, stokes_receiver) = unbounded();
+    // We'll use a mutex to hold the average that we'll pass to the dada consumer
+    let avg_mutex = Arc::new(Mutex::new([0i16; CHANNELS]));
+    // And then use a channel for state messaging
+    let (sig_tx, sig_rx) = unbounded();
+
+    // Make a clone we'll move to the thread
+    let avg_cloned = avg_mutex.clone();
 
     // Start producing polarizations on a thread
-    thread::spawn(move || udp_to_avg(udp_rx, port, stokes_sender));
+    thread::spawn(move || udp_to_avg(udp_rx, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
     let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
@@ -118,6 +152,6 @@ fn main() -> std::io::Result<()> {
     let (_, writer) = hdu.split();
 
     // Start consumer
-    stokes_to_dada(stokes_receiver, writer);
+    stokes_to_dada(avg_mutex, writer, sig_rx);
     Ok(())
 }
