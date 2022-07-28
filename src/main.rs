@@ -37,7 +37,7 @@ fn stokes_to_dada(receiver: Receiver<[i16; CHANNELS]>, mut writer: psrdada::Writ
                 1405f32,
                 1,
                 16,
-                TSAMP,
+                TSAMP * 1e6,
                 &heimdall_timestamp(first_sample_time),
             );
             println!("Sending data to heimdall via PSRDADA");
