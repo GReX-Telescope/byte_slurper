@@ -36,35 +36,35 @@ fn stokes_to_dada(
             Signal::NewAvg => {
                 println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
                 last_avg = Instant::now();
-                // // Get a lock of the avg shared memory
-                // let avg = *avg_mutex.lock().unwrap();
-                // // Push the incoming average to the right place in the output
-                // window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
-                //     .copy_from_slice(&avg);
-                // // If this was the first one, update the start time
-                // if stokes_cnt == 0 {
-                //     first_sample_time = Utc::now();
-                // }
-                // // Increment the stokes counter
-                // stokes_cnt += 1;
-                // // If we've filled the window, generate the header and send the whole thing
-                // if stokes_cnt == NSAMP {
-                //     println!("New window");
-                //     // Reset the stokes counter
-                //     stokes_cnt = 0;
-                //     // Most of these should be constants or set by args
-                //     let header = gen_header(
-                //         CHANNELS as u32,
-                //         250f32,
-                //         1405f32,
-                //         1,
-                //         16,
-                //         TSAMP * 1e6,
-                //         &heimdall_timestamp(first_sample_time),
-                //     );
-                //     writer.push_header(&header).unwrap();
-                //     writer.push(window.as_byte_slice()).unwrap();
-                // }
+                // Get a lock of the avg shared memory
+                let avg = *avg_mutex.lock().unwrap();
+                // Push the incoming average to the right place in the output
+                window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
+                    .copy_from_slice(&avg);
+                // If this was the first one, update the start time
+                if stokes_cnt == 0 {
+                    first_sample_time = Utc::now();
+                }
+                // Increment the stokes counter
+                stokes_cnt += 1;
+                // If we've filled the window, generate the header and send the whole thing
+                if stokes_cnt == NSAMP {
+                    println!("New window");
+                    // Reset the stokes counter
+                    stokes_cnt = 0;
+                    // Most of these should be constants or set by args
+                    let header = gen_header(
+                        CHANNELS as u32,
+                        250f32,
+                        1405f32,
+                        1,
+                        16,
+                        TSAMP * 1e6,
+                        &heimdall_timestamp(first_sample_time),
+                    );
+                    writer.push_header(&header).unwrap();
+                    writer.push(window.as_byte_slice()).unwrap();
+                }
             }
         }
     }
@@ -88,28 +88,27 @@ fn udp_to_avg(
         match iter.next() {
             Ok((packet, _)) => {
                 // Skip invalid packets
-                // if packet.get_destination() != port {
-                //     continue;
-                // }
-                // if packet.get_length() as usize != PAYLOAD_SIZE {
-                //     continue;
-                // }
+                if packet.get_destination() != port {
+                    continue;
+                }
+                if packet.get_length() as usize != PAYLOAD_SIZE {
+                    continue;
+                }
                 // Unpack
-                // payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
-                sig_tx.send(Signal::NewAvg).unwrap();
-                // // Generate stokes and push to averaging window
-                // let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
-                // gen_stokes_i(&pol_x, &pol_y, avg_slice);
-                // avg_cnt += 1;
-                // if avg_cnt == AVG_SIZE {
-                //     // Reset the counter
-                //     avg_cnt = 0;
-                //     // Generate average
-                //     let mut avg = *avg_mutex.lock().unwrap();
-                //     avg_from_window(&avg_window, &mut avg, CHANNELS);
-                //     // Signal the consumer that there's new data
-                //     sig_tx.send(Signal::NewAvg).unwrap();
-                // }
+                payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
+                // Generate stokes and push to averaging window
+                let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
+                gen_stokes_i(&pol_x, &pol_y, avg_slice);
+                avg_cnt += 1;
+                if avg_cnt == AVG_SIZE {
+                    // Reset the counter
+                    avg_cnt = 0;
+                    // Generate average
+                    let mut avg = *avg_mutex.lock().unwrap();
+                    avg_from_window(&avg_window, &mut avg, CHANNELS);
+                    // Signal the consumer that there's new data
+                    sig_tx.send(Signal::NewAvg).unwrap();
+                }
             }
             Err(e) => {
                 eprintln!("Packet next error - {}", e);
