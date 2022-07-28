@@ -95,7 +95,7 @@ fn udp_to_avg(
                     continue;
                 }
                 // Unpack
-                payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
+                // payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
                 sig_tx.send(Signal::NewAvg).unwrap();
                 // // Generate stokes and push to averaging window
                 // let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
