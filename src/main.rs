@@ -134,6 +134,8 @@ fn main() -> std::io::Result<()> {
     // Setup PSRDADA
     let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+        .num_bufs(8)
+        .num_headers(8)
         .build(true) // Memlock
         .unwrap();
 
