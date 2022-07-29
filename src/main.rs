@@ -93,9 +93,11 @@ fn udp_to_avg(
     cap.filter(&format!("dst port {}", port), true).unwrap();
     while let Ok(packet) = cap.next() {
         // Trim off the header
-        println!("{}", packet.data.len());
         let payload = &packet.data[42..];
         // Skip invalid packets
+        if payload.len() != PAYLOAD_SIZE {
+            continue;
+        }
         // Unpack
         payload_to_spectra(payload, &mut pol_x, &mut pol_y);
         // Generate stokes and push to averaging window
