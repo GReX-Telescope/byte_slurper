@@ -1,7 +1,7 @@
 use byte_slice_cast::AsByteSlice;
 use byte_slurper::*;
 use chrono::Utc;
-use crossbeam_channel::{bounded, unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use pnet::{
     packet::{ip::IpNextHeaderProtocols, Packet},
     transport::{
@@ -9,7 +9,7 @@ use pnet::{
         TransportReceiver,
     },
 };
-use psrdada::{DadaDB, DadaDBBuilder};
+use psrdada::DadaDBBuilder;
 use std::{
     default::Default,
     sync::{Arc, Mutex},
@@ -71,7 +71,7 @@ fn stokes_to_dada(
 }
 
 fn udp_to_avg(
-    mut udp_rx: TransportReceiver,
+    udp: pcap::Device,
     port: u16,
     avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
     sig_tx: Sender<Signal>,
@@ -83,36 +83,33 @@ fn udp_to_avg(
     let mut avg_window = [0i16; AVG_WINDOW_SIZE];
     let mut avg_cnt = 0usize;
     // Capture packets
-    let mut iter = udp_packet_iter(&mut udp_rx);
-    loop {
-        match iter.next() {
-            Ok((packet, _)) => {
-                // Skip invalid packets
-                if packet.get_destination() != port {
-                    continue;
-                }
-                if packet.get_length() as usize != PAYLOAD_SIZE {
-                    continue;
-                }
-                // Unpack
-                payload_to_spectra(packet.packet(), &mut pol_x, &mut pol_y);
-                // Generate stokes and push to averaging window
-                let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
-                gen_stokes_i(&pol_x, &pol_y, avg_slice);
-                avg_cnt += 1;
-                if avg_cnt == AVG_SIZE {
-                    // Reset the counter
-                    avg_cnt = 0;
-                    // Generate average
-                    let mut avg = *avg_mutex.lock().unwrap();
-                    avg_from_window(&avg_window, &mut avg, CHANNELS);
-                    // Signal the consumer that there's new data
-                    sig_tx.send(Signal::NewAvg).unwrap();
-                }
-            }
-            Err(e) => {
-                eprintln!("Packet next error - {}", e);
-            }
+    let mut cap = pcap::Capture::from_device(udp)
+        .unwrap()
+        .timeout(1000000000)
+        .buffer_size(2 * PAYLOAD_SIZE as i32)
+        .open()
+        .unwrap();
+    // Add a port filterer for what we expect
+    cap.filter(&format!("dst port {}", port), true).unwrap();
+    while let Ok(packet) = cap.next() {
+        // Trim off the header
+        println!("{}", packet.data.len());
+        let payload = &packet.data[42..];
+        // Skip invalid packets
+        // Unpack
+        payload_to_spectra(payload, &mut pol_x, &mut pol_y);
+        // Generate stokes and push to averaging window
+        let avg_slice = &mut avg_window[(avg_cnt * CHANNELS)..((avg_cnt + 1) * CHANNELS)];
+        gen_stokes_i(&pol_x, &pol_y, avg_slice);
+        avg_cnt += 1;
+        if avg_cnt == AVG_SIZE {
+            // Reset the counter
+            avg_cnt = 0;
+            // Generate average
+            let mut avg = *avg_mutex.lock().unwrap();
+            avg_from_window(&avg_window, &mut avg, CHANNELS);
+            // Signal the consumer that there's new data
+            sig_tx.send(Signal::NewAvg).unwrap();
         }
     }
 }
@@ -121,30 +118,33 @@ fn main() -> std::io::Result<()> {
     // Get these from args
     let port = 60000u16;
     let dada_key = 0xbeef;
+    let device_name = "enp129s0f0";
 
-    // We're going to be looking at Layer 4, IpV4, UDP data
-    let (_, udp_rx) = transport_channel(PAYLOAD_SIZE * 2, Layer4(Ipv4(IpNextHeaderProtocols::Udp)))
-        .expect("Error creating transport channel");
+    // Grab the pcap device that matches this interface
+    let device = pcap::Device::list()
+        .expect("Error listing devices from Pcap")
+        .into_iter()
+        .filter(|d| d.name == device_name)
+        .next()
+        .unwrap_or_else(|| panic!("Device named {} not found", device_name));
 
     // Setup multithreading
     // We'll use a mutex to hold the average that we'll pass to the dada consumer
     let avg_mutex = Arc::new(Mutex::new([0i16; CHANNELS]));
     // And then use a channel for state messaging
-    let (sig_tx, sig_rx) = bounded(5);
+    let (sig_tx, sig_rx) = unbounded();
 
     // Make a clone we'll move to the thread
     let avg_cloned = avg_mutex.clone();
 
     // Start producing polarizations on a thread
-    thread::spawn(move || udp_to_avg(udp_rx, port, avg_cloned, sig_tx));
+    thread::spawn(move || udp_to_avg(device, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
-    // let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
-    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-    //     .build(true) // Memlock
-    //     .unwrap();
-
-    let hdu = DadaDB::connect(dada_key, "byte_slurper").unwrap();
+    let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
+        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+        .build(true) // Memlock
+        .unwrap();
 
     let (_, writer) = hdu.split();
 
