@@ -2,19 +2,11 @@ use byte_slice_cast::AsByteSlice;
 use byte_slurper::*;
 use chrono::Utc;
 use crossbeam_channel::{unbounded, Receiver, Sender};
-use pnet::{
-    packet::{ip::IpNextHeaderProtocols, Packet},
-    transport::{
-        transport_channel, udp_packet_iter, TransportChannelType::Layer4, TransportProtocol::Ipv4,
-        TransportReceiver,
-    },
-};
 use psrdada::DadaDBBuilder;
 use std::{
     default::Default,
     sync::{Arc, Mutex},
     thread,
-    time::Instant,
 };
 
 fn stokes_to_dada(
@@ -27,15 +19,12 @@ fn stokes_to_dada(
     let mut stokes_cnt = 0usize;
     let mut first_sample_time = Utc::now();
 
-    let mut last_avg = Instant::now();
     loop {
         match sig_rx.recv().unwrap() {
             Signal::Stop => {
                 break;
             }
             Signal::NewAvg => {
-                println!("Avg time - {}", last_avg.elapsed().as_secs_f32() * 1e6);
-                last_avg = Instant::now();
                 // Get a lock of the avg shared memory
                 let avg = *avg_mutex.lock().unwrap();
                 // Push the incoming average to the right place in the output
