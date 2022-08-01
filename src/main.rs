@@ -46,6 +46,7 @@ fn stokes_to_dada(
                     break;
                 }
                 Signal::NewAvg => {
+                    println!("New average");
                     // Get a lock of the avg shared memory
                     let avg = *avg_mutex.lock().unwrap();
                     // Push the incoming average to the right place in the output
@@ -154,7 +155,7 @@ fn main() -> std::io::Result<()> {
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .num_bufs(8)
         .num_headers(8)
-        //.cuda_device(0)
+        .cuda_device(0)
         .build()
         .unwrap();
 
