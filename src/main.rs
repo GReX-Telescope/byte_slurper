@@ -128,7 +128,7 @@ fn udp_to_avg(
 fn main() -> std::io::Result<()> {
     // Get these from args
     let port = 60000u16;
-    let dada_key = 0xbfff;
+    let dada_key = 0xb0ba;
     let device_name = "enp129s0f0";
 
     // Grab the pcap device that matches this interface
@@ -151,13 +151,14 @@ fn main() -> std::io::Result<()> {
     thread::spawn(move || udp_to_avg(device, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
-    let client = DadaClientBuilder::new(dada_key)
-        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-        .num_bufs(8)
-        .num_headers(8)
-       //  .cuda_device(0)
-        .build()
-        .unwrap();
+    // let client = DadaClientBuilder::new(dada_key)
+    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+    //     .num_bufs(8)
+    //     .num_headers(8)
+    //    .cuda_device(0)
+    //     .build()
+    //     .unwrap();
+    let client = DadaClient::new(dada_key).unwrap();
 
     // Start consumer
     stokes_to_dada(avg_mutex, client, sig_rx);
