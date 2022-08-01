@@ -128,7 +128,7 @@ fn udp_to_avg(
 fn main() -> std::io::Result<()> {
     // Get these from args
     let port = 60000u16;
-    let dada_key = 0xbeff;
+    let dada_key = 0xbfff;
     let device_name = "enp129s0f0";
 
     // Grab the pcap device that matches this interface
@@ -155,7 +155,7 @@ fn main() -> std::io::Result<()> {
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .num_bufs(8)
         .num_headers(8)
-        .cuda_device(0)
+       //  .cuda_device(0)
         .build()
         .unwrap();
 
