@@ -128,7 +128,7 @@ fn udp_to_avg(
 fn main() -> std::io::Result<()> {
     // Get these from args
     let port = 60000u16;
-    let dada_key = 0xbeef;
+    let dada_key = 0xbeff;
     let device_name = "enp129s0f0";
 
     // Grab the pcap device that matches this interface
