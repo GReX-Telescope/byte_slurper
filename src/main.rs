@@ -154,7 +154,7 @@ fn main() -> std::io::Result<()> {
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .num_bufs(8)
         .num_headers(8)
-        .cuda_device(0)
+        //.cuda_device(0)
         .build()
         .unwrap();
 
