@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use num_complex::Complex;
 
@@ -82,27 +80,7 @@ pub fn avg_from_window(input: &[i16], output: &mut [i16], n: usize) {
     }
 }
 
-pub fn gen_header(
-    nchan: u32,
-    bw: f32,
-    freq: f32,
-    npol: u32,
-    nbit: u32,
-    tsamp: f32,
-    utc_start: &str,
-) -> HashMap<String, String> {
-    HashMap::from([
-        ("NCHAN".to_owned(), nchan.to_string()),
-        ("BW".to_owned(), bw.to_string()),
-        ("FREQ".to_owned(), freq.to_string()),
-        ("NPOL".to_owned(), npol.to_string()),
-        ("NBIT".to_owned(), nbit.to_string()),
-        ("TSAMP".to_owned(), tsamp.to_string()),
-        ("UTC_START".to_owned(), utc_start.to_owned()),
-    ])
-}
-
-pub fn heimdall_timestamp(time: DateTime<Utc>) -> String {
+pub fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
     format!(
         "{}-{:02}-{:02}-{:02}:{:02}:{:02}",
         time.year(),

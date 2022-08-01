@@ -1,58 +1,77 @@
-use byte_slice_cast::AsByteSlice;
-use byte_slurper::*;
-use chrono::Utc;
-use crossbeam_channel::{unbounded, Receiver, Sender};
-use psrdada::DadaDBBuilder;
 use std::{
+    collections::HashMap,
     default::Default,
+    io::Write,
     sync::{Arc, Mutex},
     thread,
 };
 
+use byte_slice_cast::AsByteSlice;
+use byte_slurper::*;
+use chrono::Utc;
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use lending_iterator::LendingIterator;
+use psrdada::{builder::DadaClientBuilder, client::DadaClient};
+
 fn stokes_to_dada(
     avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
-    mut writer: psrdada::WriteHalf,
+    mut client: DadaClient,
     sig_rx: Receiver<Signal>,
 ) {
-    // Allocate window on the heap to avoid a stack overflow
-    let mut window = vec![0i16; WINDOW_SIZE].into_boxed_slice();
     let mut stokes_cnt = 0usize;
+    // Setup our timer for the samples
     let mut first_sample_time = Utc::now();
+    // Most of these should be constants or set by args
+    let mut header = HashMap::from([
+        ("NCHAN".to_owned(), CHANNELS.to_string()),
+        ("BW".to_owned(), "250".to_owned()),
+        ("FREQ".to_owned(), "1405".to_owned()),
+        ("NPOL".to_owned(), "1".to_owned()),
+        ("NBIT".to_owned(), "16".to_owned()),
+        ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
+        (
+            "UTC_START".to_owned(),
+            heimdall_timestamp(&first_sample_time),
+        ),
+    ]);
+    let (mut hc, mut dc) = client.split();
+    let mut data_writer = dc.writer();
 
     loop {
-        match sig_rx.recv().unwrap() {
-            Signal::Stop => {
-                break;
-            }
-            Signal::NewAvg => {
-                // Get a lock of the avg shared memory
-                let avg = *avg_mutex.lock().unwrap();
-                // Push the incoming average to the right place in the output
-                window[(stokes_cnt * CHANNELS)..((stokes_cnt + 1) * CHANNELS)]
-                    .copy_from_slice(&avg);
-                // If this was the first one, update the start time
-                if stokes_cnt == 0 {
-                    first_sample_time = Utc::now();
+        // Grab the block
+        let mut block = data_writer.next().unwrap();
+        loop {
+            match sig_rx.recv().unwrap() {
+                Signal::Stop => {
+                    break;
                 }
-                // Increment the stokes counter
-                stokes_cnt += 1;
-                // If we've filled the window, generate the header and send the whole thing
-                if stokes_cnt == NSAMP {
-                    println!("New window");
-                    // Reset the stokes counter
-                    stokes_cnt = 0;
-                    // Most of these should be constants or set by args
-                    let header = gen_header(
-                        CHANNELS as u32,
-                        250f32,
-                        1405f32,
-                        1,
-                        16,
-                        TSAMP * 1e6,
-                        &heimdall_timestamp(first_sample_time),
-                    );
-                    writer.push_header(&header).unwrap();
-                    writer.push(window.as_byte_slice()).unwrap();
+                Signal::NewAvg => {
+                    // Get a lock of the avg shared memory
+                    let avg = *avg_mutex.lock().unwrap();
+                    // Push the incoming average to the right place in the output
+                    block.write_all(avg.as_byte_slice()).unwrap();
+                    // If this was the first one, update the start time
+                    if stokes_cnt == 0 {
+                        first_sample_time = Utc::now();
+                    }
+                    // Increment the stokes counter
+                    stokes_cnt += 1;
+                    // If we've filled the window, generate the header and send the whole thing
+                    if stokes_cnt == NSAMP {
+                        println!("New window");
+                        // Reset the stokes counter
+                        stokes_cnt = 0;
+                        // update header time
+                        header
+                            .entry("UTC_START".to_owned())
+                            .or_insert_with(|| heimdall_timestamp(&first_sample_time));
+                        // Safety: All these header keys and values are valid
+                        unsafe { hc.push_header(&header).unwrap() };
+                        // Commit data and update
+                        block.commit();
+                        // Break to finish the write
+                        break;
+                    }
                 }
             }
         }
@@ -115,8 +134,7 @@ fn main() -> std::io::Result<()> {
     let device = pcap::Device::list()
         .expect("Error listing devices from Pcap")
         .into_iter()
-        .filter(|d| d.name == device_name)
-        .next()
+        .find(|d| d.name == device_name)
         .unwrap_or_else(|| panic!("Device named {} not found", device_name));
 
     // Setup multithreading
@@ -132,16 +150,15 @@ fn main() -> std::io::Result<()> {
     thread::spawn(move || udp_to_avg(device, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
-    let hdu = DadaDBBuilder::new(dada_key, "byte_slurper")
+    let client = DadaClientBuilder::new(dada_key)
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .num_bufs(8)
         .num_headers(8)
-        .build(true) // Memlock
+        .cuda_device(0)
+        .build()
         .unwrap();
 
-    let (_, writer) = hdu.split();
-
     // Start consumer
-    stokes_to_dada(avg_mutex, writer, sig_rx);
+    stokes_to_dada(avg_mutex, client, sig_rx);
     Ok(())
 }

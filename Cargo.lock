@@ -90,6 +90,7 @@ dependencies = [
  "criterion",
  "crossbeam-channel",
  "ctrlc",
+ "lending-iterator",
  "num-complex",
  "num-traits",
  "pcap",
@@ -297,6 +298,24 @@ checksum = "b37feaa84e6861e00a1f5e5aa8da3ee56d605c9992d33e082786754828e20865"
 dependencies = [
  "nix",
  "winapi",
+]
+
+[[package]]
+name = "cuda-config"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ee74643f7430213a1a78320f88649de309b20b80818325575e393f848f79f5d"
+dependencies = [
+ "glob",
+]
+
+[[package]]
+name = "cuda-runtime-sys"
+version = "0.3.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d070b301187fee3c611e75a425cf12247b7c75c09729dbdef95cb9cb64e8c39"
+dependencies = [
+ "cuda-config",
 ]
 
 [[package]]
@@ -717,6 +736,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
+name = "pkg-config"
+version = "0.3.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
+
+[[package]]
 name = "plotters"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -768,10 +793,12 @@ dependencies = [
 [[package]]
 name = "psrdada"
 version = "0.1.0"
-source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#d93b73a0a2230b8b06ea510fd11c3c85bcddad55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fd452c5eb6a11aff937e73b8df55f0041bd06f28da8340fe298981d680ab9af"
 dependencies = [
- "itertools",
+ "cuda-runtime-sys",
  "lending-iterator",
+ "nom",
  "page_size",
  "psrdada-sys",
  "tracing",
@@ -779,11 +806,13 @@ dependencies = [
 
 [[package]]
 name = "psrdada-sys"
-version = "0.0.0"
-source = "git+https://github.com/GReX-Telescope/psrdada-rs?branch=main#d93b73a0a2230b8b06ea510fd11c3c85bcddad55"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa31aaf71a8805ff13931ce840b092babf11e18f927a0a262cd43ca8488d8b6a"
 dependencies = [
  "bindgen",
  "cc",
+ "pkg-config",
 ]
 
 [[package]]
