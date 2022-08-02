@@ -60,7 +60,6 @@ fn stokes_to_dada(
                     // If we've filled the window, generate the header and send the whole thing
                     if stokes_cnt == NSAMP {
                         println!("New window");
-                        println!("{:#?}", avg);
                         // Send to TCP viewer
                         stream.write_all(avg.as_byte_slice()).unwrap();
                         // Reset the stokes counter
@@ -113,17 +112,17 @@ fn udp_to_avg(
         // Unpack
         payload_to_spectra(payload, &mut pol_x, &mut pol_y);
         // Generate stokes and push to averaging window
-        // We have to transpose the data here so the averaging sums are sequential in memory
-        for (i, j) in (0..AVG_WINDOW_SIZE).step_by(AVG_SIZE).enumerate() {
-            avg_window[j] = stokes_i(pol_x[i], pol_y[i]);
-        }
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
             // Reset the counter
             avg_cnt = 0;
             // Generate average
             let avg = &mut (*avg_mutex.lock().unwrap());
-            avg_from_window(&avg_window, avg);
+            // Just decimate by avg
+            for i in 0..CHANNELS {
+                avg[i] = stokes_i(pol_x[i], pol_y[i]);
+            }
+            //avg_from_window(&avg_window, avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
