@@ -112,15 +112,15 @@ fn udp_to_avg(
         // Unpack
         payload_to_spectra(payload, &mut pol_x, &mut pol_y);
         // Generate stokes and push to averaging window
-        let avg = &mut *avg_mutex.lock().unwrap();
         for i in 0..PAYLOAD_SIZE {
-            avg[i * AVG_SIZE] = stokes_i(pol_x[i], pol_y[i]);
+            avg_window[i * AVG_SIZE] = stokes_i(pol_x[i], pol_y[i]);
         }
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
             // Reset the counter
             avg_cnt = 0;
             // Generate average
+            let avg = &mut *avg_mutex.lock().unwrap();
             avg_from_window::<AVG_SIZE>(&avg_window, avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
