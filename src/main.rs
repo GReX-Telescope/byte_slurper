@@ -49,8 +49,6 @@ fn stokes_to_dada(
                 Signal::NewAvg => {
                     // Get a lock of the avg shared memory
                     let avg = *avg_mutex.lock().unwrap();
-                    // Send to TCP viewer
-                    stream.write_all(avg.as_byte_slice()).unwrap();
                     // Push the incoming average to the right place in the output
                     // block.write_all(avg.as_byte_slice()).unwrap();
                     // If this was the first one, update the start time
@@ -62,6 +60,8 @@ fn stokes_to_dada(
                     // If we've filled the window, generate the header and send the whole thing
                     if stokes_cnt == NSAMP {
                         println!("New window");
+                        // Send to TCP viewer
+                        stream.write_all(avg.as_byte_slice()).unwrap();
                         // Reset the stokes counter
                         stokes_cnt = 0;
                         // update header time
