@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     default::Default,
     io::Write,
+    net::{TcpListener, TcpStream},
     sync::{Arc, Mutex},
     thread,
 };
@@ -17,6 +18,7 @@ fn stokes_to_dada(
     avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
     mut client: DadaClient,
     sig_rx: Receiver<Signal>,
+    stream: TcpStream,
 ) {
     let mut stokes_cnt = 0usize;
     // Setup our timer for the samples
@@ -39,7 +41,7 @@ fn stokes_to_dada(
 
     loop {
         // Grab the block
-        let mut block = data_writer.next().unwrap();
+        // let mut block = data_writer.next().unwrap();
         loop {
             match sig_rx.recv().unwrap() {
                 Signal::Stop => {
@@ -48,8 +50,10 @@ fn stokes_to_dada(
                 Signal::NewAvg => {
                     // Get a lock of the avg shared memory
                     let avg = *avg_mutex.lock().unwrap();
+                    // Send to TCP viewer
+                    stream.write_all(avg.as_byte_slice()).unwrap();
                     // Push the incoming average to the right place in the output
-                    block.write_all(avg.as_byte_slice()).unwrap();
+                    // block.write_all(avg.as_byte_slice()).unwrap();
                     // If this was the first one, update the start time
                     if stokes_cnt == 0 {
                         first_sample_time = Utc::now();
@@ -62,13 +66,13 @@ fn stokes_to_dada(
                         // Reset the stokes counter
                         stokes_cnt = 0;
                         // update header time
-                        header
-                            .entry("UTC_START".to_owned())
-                            .or_insert_with(|| heimdall_timestamp(&first_sample_time));
-                        // Safety: All these header keys and values are valid
-                        unsafe { hc.push_header(&header).unwrap() };
-                        // Commit data and update
-                        block.commit();
+                        // header
+                        //     .entry("UTC_START".to_owned())
+                        //     .or_insert_with(|| heimdall_timestamp(&first_sample_time));
+                        // // Safety: All these header keys and values are valid
+                        // unsafe { hc.push_header(&header).unwrap() };
+                        // // Commit data and update
+                        // block.commit();
                         // Break to finish the write
                         break;
                     }
@@ -149,6 +153,11 @@ fn main() -> std::io::Result<()> {
     // Start producing polarizations on a thread
     thread::spawn(move || udp_to_avg(device, port, avg_cloned, sig_tx));
 
+    // Setup listener socket
+    let stokes_stream = TcpListener::bind("0.0.0.0:4242").unwrap();
+    println!("Waiting for listen connection");
+    let (mut stokes_socket, _) = stokes_stream.accept()?;
+
     // Setup PSRDADA
     let client = DadaClientBuilder::new(dada_key)
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
@@ -158,6 +167,6 @@ fn main() -> std::io::Result<()> {
         .unwrap();
 
     // Start consumer
-    stokes_to_dada(avg_mutex, client, sig_rx);
+    stokes_to_dada(avg_mutex, client, sig_rx, stokes_stream);
     Ok(())
 }

@@ -16,23 +16,23 @@ pub const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 pub type ComplexByte = Complex<i8>;
 
 // Upcast to avoid overflow
-fn square_byte(byte: i8) -> i16 {
-    byte as i16 * byte as i16
+fn square_byte(byte: i8) -> u16 {
+    (byte as i16 * byte as i16) as u16
 }
 
 // If we need to, these can be unchecked-add
-fn norm_sq(cb: ComplexByte) -> i16 {
+fn norm_sq(cb: ComplexByte) -> u16 {
     square_byte(cb.re) + square_byte(cb.im)
 }
 
-fn stokes_i(pol_x: ComplexByte, pol_b: ComplexByte) -> i16 {
+fn stokes_i(pol_x: ComplexByte, pol_b: ComplexByte) -> u16 {
     norm_sq(pol_x) + norm_sq(pol_b)
 }
 
 pub fn gen_stokes_i<const N: usize>(
     pol_x: &[ComplexByte; N],
     pol_y: &[ComplexByte; N],
-    output: &mut [i16],
+    output: &mut [u16],
 ) {
     for i in 0..N {
         output[i] = stokes_i(pol_x[i], pol_y[i]);
