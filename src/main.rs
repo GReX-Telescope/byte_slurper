@@ -113,7 +113,7 @@ fn udp_to_avg(
         payload_to_spectra(payload, &mut pol_x, &mut pol_y);
         // Generate stokes and push to averaging window
         for i in 0..CHANNELS {
-            avg_window[(i + avg_cnt) * AVG_SIZE] = stokes_i(pol_x[i], pol_y[i]);
+            avg_window[(i * AVG_SIZE) + avg_cnt] = stokes_i(pol_x[i], pol_y[i]);
         }
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
