@@ -27,7 +27,7 @@ fn stokes_to_dada(
         ("BW".to_owned(), "250".to_owned()),
         ("FREQ".to_owned(), "1405".to_owned()),
         ("NPOL".to_owned(), "1".to_owned()),
-        ("NBITS".to_owned(), "16".to_owned()),
+        ("NBIT".to_owned(), "16".to_owned()),
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
         (
             "UTC_START".to_owned(),
