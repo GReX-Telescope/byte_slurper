@@ -62,6 +62,7 @@ fn stokes_to_dada(
                         println!("New window");
                         // Send to TCP viewer
                         stream.write_all(avg.as_byte_slice()).unwrap();
+                        println!("{:#?}", avg.as_byte_slice());
                         // Reset the stokes counter
                         stokes_cnt = 0;
                         // update header time
@@ -123,7 +124,6 @@ fn udp_to_avg(
             // Generate average
             let mut avg = *avg_mutex.lock().unwrap();
             avg_from_window(&avg_window, &mut avg);
-            println!("{:#?}", avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
