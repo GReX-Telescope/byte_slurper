@@ -48,7 +48,7 @@ fn stokes_to_dada(
                 }
                 Signal::NewAvg => {
                     // Get a lock of the avg shared memory
-                    let avg = *avg_mutex.lock().unwrap();
+                    let avg = &(*avg_mutex.lock().unwrap());
 
                     println!("{:#?}", avg);
                     // Push the incoming average to the right place in the output
@@ -123,8 +123,8 @@ fn udp_to_avg(
             // Reset the counter
             avg_cnt = 0;
             // Generate average
-            let mut avg = *avg_mutex.lock().unwrap();
-            avg_from_window(&avg_window, &mut avg);
+            let avg = &mut (*avg_mutex.lock().unwrap());
+            avg_from_window(&avg_window, avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
