@@ -27,7 +27,7 @@ fn stokes_to_dada(
         ("BW".to_owned(), "250".to_owned()),
         ("FREQ".to_owned(), "1405".to_owned()),
         ("NPOL".to_owned(), "1".to_owned()),
-        ("NBIT".to_owned(), "16".to_owned()),
+        ("NBITS".to_owned(), "16".to_owned()),
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
         (
             "UTC_START".to_owned(),
@@ -151,14 +151,12 @@ fn main() -> std::io::Result<()> {
     thread::spawn(move || udp_to_avg(device, port, avg_cloned, sig_tx));
 
     // Setup PSRDADA
-    // let client = DadaClientBuilder::new(dada_key)
-    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-    //     .num_bufs(8)
-    //     .num_headers(8)
-    //    .cuda_device(0)
-    //     .build()
-    //     .unwrap();
-    let client = DadaClient::new(dada_key).unwrap();
+    let client = DadaClientBuilder::new(dada_key)
+        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+        .num_bufs(8)
+        .num_headers(8)
+        .build()
+        .unwrap();
 
     // Start consumer
     stokes_to_dada(avg_mutex, client, sig_rx);

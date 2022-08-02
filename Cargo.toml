@@ -12,7 +12,7 @@ lending-iterator = "0.1.5"
 num-complex = "0.4"
 num-traits = "0.2"
 pcap = "0.9.2"
-psrdada = { version = "0.1", features = ["cuda"] }
+psrdada = "0.1"
 
 [dev-dependencies]
 criterion = "0.3"
