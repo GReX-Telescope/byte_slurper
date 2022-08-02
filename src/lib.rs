@@ -22,12 +22,12 @@ pub struct Complex<T> {
     im: T,
 }
 
-pub type FpgaByte = FixedI8<U7>;
-pub type FixedWord = FixedI16<U14>;
+pub type FpgaByte = i8;
+pub type FixedWord = u16;
 pub type ComplexByte = Complex<FpgaByte>;
 
 fn square_byte(byte: FpgaByte) -> FixedWord {
-    byte.wide_mul(byte)
+    byte.unsigned_abs() as u16 * byte.unsigned_abs() as u16
 }
 
 // If we need to, these can be unchecked-add
@@ -37,13 +37,11 @@ fn norm_sq(cb: ComplexByte) -> FixedWord {
 
 // We're done multiplying, so we can come back to u16 land
 pub fn stokes_i(pol_x: ComplexByte, pol_y: ComplexByte) -> u16 {
-    let pol_x: u16 = norm_sq(pol_x).to_num();
-    let pol_y: u16 = norm_sq(pol_y).to_num();
-    pol_x + pol_y
+    norm_sq(pol_x) + norm_sq(pol_y)
 }
 
 fn raw_to_fpga(byte: u8) -> FpgaByte {
-    FpgaByte::from_bits(byte as i8)
+    byte as i8
 }
 
 pub fn payload_to_spectra(
