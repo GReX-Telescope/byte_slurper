@@ -1,11 +1,12 @@
 use chrono::{DateTime, Datelike, Timelike, Utc};
+use nalgebra::{ArrayStorage, Const, Matrix, OMatrix, SMatrix};
 use num_complex::Complex;
 
 pub const PAYLOAD_SIZE: usize = 8192;
 pub const WORD_SIZE: usize = 8;
 pub const CHANNELS: usize = 2048;
 
-pub const AVG_SIZE: usize = 8; // At tsamp of 8.192 us, this gives us 1 stoke per 65.536us
+pub const AVG_SIZE: usize = 4; // At tsamp of 8.192 us, this gives us 1 stoke per 65.536us
 pub const NSAMP: usize = 16384; // At stoke time of 65.536, this is a little more than a second
 pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 // A buffer for the running average
@@ -25,7 +26,7 @@ fn norm_sq(cb: ComplexByte) -> u16 {
     square_byte(cb.re) + square_byte(cb.im)
 }
 
-fn stokes_i(pol_x: ComplexByte, pol_b: ComplexByte) -> u16 {
+pub fn stokes_i(pol_x: ComplexByte, pol_b: ComplexByte) -> u16 {
     norm_sq(pol_x) + norm_sq(pol_b)
 }
 
@@ -72,12 +73,16 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn avg_from_window(input: &[u16], output: &mut [u16], n: usize) {
-    // [ch0,ch1..chN,ch0,ch1...]
-    for (i, chunk) in input.chunks_exact(n).enumerate() {
-        let sum: u32 = chunk.iter().fold(0u32, |acc, x| acc + *x as u32);
-        output[i] = (sum / n as u32) as u16
-    }
+pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16; N]) {
+    let chunks = input.len() / N;
+    let shift = chunks / 2;
+    input
+        .chunks_exact(chunks)
+        .into_iter()
+        .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
+        .map(|x| (x >> shift) as u16)
+        .enumerate()
+        .for_each(|(i, v)| output[i] = v);
 }
 
 pub fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
