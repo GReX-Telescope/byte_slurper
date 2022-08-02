@@ -77,14 +77,13 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
+pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [f32]) {
     let chunks = input.len() / N;
-    let shift = chunks / 2;
     input
         .chunks_exact(chunks)
         .into_iter()
-        .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
-        .map(|x| (x >> shift) as u16)
+        .map(|chunk| chunk.iter().fold(0f32, |x, y| x + *y as f32))
+        .map(|x| x / chunks as f32)
         .enumerate()
         .for_each(|(i, v)| output[i] = v);
 }
