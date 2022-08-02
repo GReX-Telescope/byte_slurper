@@ -105,3 +105,18 @@ pub enum Signal {
     NewAvg,
     Stop,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stokes() {
+        let pol_x = Complex { re: 32i8, im: 64i8 };
+        let pol_y = Complex {
+            re: -128i8,
+            im: 127i8,
+        };
+        assert_eq!(37633u16, stokes_i(pol_x, pol_y))
+    }
+}
