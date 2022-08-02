@@ -16,7 +16,6 @@ use psrdada::{builder::DadaClientBuilder, client::DadaClient};
 
 fn stokes_to_dada(
     avg_mutex: Arc<Mutex<[u16; CHANNELS]>>,
-    mut client: DadaClient,
     sig_rx: Receiver<Signal>,
     mut stream: TcpStream,
 ) {
@@ -36,8 +35,8 @@ fn stokes_to_dada(
             heimdall_timestamp(&first_sample_time),
         ),
     ]);
-    let (mut hc, mut dc) = client.split();
-    let mut data_writer = dc.writer();
+    // let (mut hc, mut dc) = client.split();
+    // let mut data_writer = dc.writer();
 
     loop {
         // Grab the block
@@ -167,6 +166,6 @@ fn main() -> std::io::Result<()> {
     //     .unwrap();
 
     // Start consumer
-    stokes_to_dada(avg_mutex, client, sig_rx, stokes_socket);
+    stokes_to_dada(avg_mutex, sig_rx, stokes_socket);
     Ok(())
 }
