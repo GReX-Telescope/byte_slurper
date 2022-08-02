@@ -46,7 +46,6 @@ fn stokes_to_dada(
                     break;
                 }
                 Signal::NewAvg => {
-                    println!("New average");
                     // Get a lock of the avg shared memory
                     let avg = *avg_mutex.lock().unwrap();
                     // Push the incoming average to the right place in the output
