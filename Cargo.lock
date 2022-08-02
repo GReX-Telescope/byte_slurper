@@ -91,7 +91,6 @@ checksum = "87c5fdd0166095e1d463fc6cc01aa8ce547ad77a4e84d42eb6762b084e28067e"
 name = "byte_slurper"
 version = "0.1.0"
 dependencies = [
- "az",
  "byte-slice-cast",
  "chrono",
  "criterion",

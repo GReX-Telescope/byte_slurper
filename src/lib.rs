@@ -1,4 +1,3 @@
-use az::Cast;
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use fixed::{
     types::extra::{U14, U7},
@@ -38,8 +37,8 @@ fn norm_sq(cb: ComplexByte) -> FixedWord {
 
 // We're done multiplying, so we can come back to u16 land
 pub fn stokes_i(pol_x: ComplexByte, pol_y: ComplexByte) -> u16 {
-    let pol_x: u16 = norm_sq(pol_x).cast();
-    let pol_y: u16 = norm_sq(pol_y).cast();
+    let pol_x: u16 = norm_sq(pol_x).to_num();
+    let pol_y: u16 = norm_sq(pol_y).to_num();
     pol_x + pol_y
 }
 
