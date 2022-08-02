@@ -72,11 +72,11 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn avg_from_window(input: &[i16], output: &mut [i16], n: usize) {
+pub fn avg_from_window(input: &[u16], output: &mut [u16], n: usize) {
     // [ch0,ch1..chN,ch0,ch1...]
     for (i, chunk) in input.chunks_exact(n).enumerate() {
-        let sum: i32 = chunk.iter().fold(0i32, |acc, x| acc + *x as i32);
-        output[i] = (sum / n as i32) as i16
+        let sum: u32 = chunk.iter().fold(0u32, |acc, x| acc + *x as u32);
+        output[i] = (sum / n as u32) as u16
     }
 }
 

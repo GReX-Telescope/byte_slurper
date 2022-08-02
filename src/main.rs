@@ -15,10 +15,10 @@ use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
 
 fn stokes_to_dada(
-    avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
+    avg_mutex: Arc<Mutex<[u16; CHANNELS]>>,
     mut client: DadaClient,
     sig_rx: Receiver<Signal>,
-    stream: TcpStream,
+    mut stream: TcpStream,
 ) {
     let mut stokes_cnt = 0usize;
     // Setup our timer for the samples
@@ -85,14 +85,14 @@ fn stokes_to_dada(
 fn udp_to_avg(
     udp: pcap::Device,
     port: u16,
-    avg_mutex: Arc<Mutex<[i16; CHANNELS]>>,
+    avg_mutex: Arc<Mutex<[u16; CHANNELS]>>,
     sig_tx: Sender<Signal>,
 ) {
     // Locals
     let mut pol_x = [ComplexByte::default(); CHANNELS];
     let mut pol_y = [ComplexByte::default(); CHANNELS];
     // State to hold the averaging window
-    let mut avg_window = [0i16; AVG_WINDOW_SIZE];
+    let mut avg_window = [0u16; AVG_WINDOW_SIZE];
     let mut avg_cnt = 0usize;
     // Capture packets
     let mut cap = pcap::Capture::from_device(udp)
@@ -143,7 +143,7 @@ fn main() -> std::io::Result<()> {
 
     // Setup multithreading
     // We'll use a mutex to hold the average that we'll pass to the dada consumer
-    let avg_mutex = Arc::new(Mutex::new([0i16; CHANNELS]));
+    let avg_mutex = Arc::new(Mutex::new([0u16; CHANNELS]));
     // And then use a channel for state messaging
     let (sig_tx, sig_rx) = unbounded();
 
@@ -167,6 +167,6 @@ fn main() -> std::io::Result<()> {
         .unwrap();
 
     // Start consumer
-    stokes_to_dada(avg_mutex, client, sig_rx, stokes_stream);
+    stokes_to_dada(avg_mutex, client, sig_rx, stokes_socket);
     Ok(())
 }
