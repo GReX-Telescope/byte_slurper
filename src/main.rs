@@ -122,7 +122,6 @@ fn udp_to_avg(
             // Generate average
             let avg = &mut *avg_mutex.lock().unwrap();
             avg_from_window::<CHANNELS>(&avg_window, avg);
-            println!("{:?}", avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
