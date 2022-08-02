@@ -159,12 +159,12 @@ fn main() -> std::io::Result<()> {
     let (mut stokes_socket, _) = stokes_stream.accept()?;
 
     // Setup PSRDADA
-    let client = DadaClientBuilder::new(dada_key)
-        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-        .num_bufs(8)
-        .num_headers(8)
-        .build()
-        .unwrap();
+    // let client = DadaClientBuilder::new(dada_key)
+    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+    //     .num_bufs(8)
+    //     .num_headers(8)
+    //     .build()
+    //     .unwrap();
 
     // Start consumer
     stokes_to_dada(avg_mutex, client, sig_rx, stokes_socket);
