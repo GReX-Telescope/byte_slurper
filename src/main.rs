@@ -15,7 +15,7 @@ use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
 
 fn stokes_to_dada(
-    avg_mutex: Arc<Mutex<[u16; CHANNELS]>>,
+    avg_mutex: Arc<Mutex<Vec<u16>>>,
     sig_rx: Receiver<Signal>,
     mut stream: TcpStream,
 ) {
@@ -48,7 +48,7 @@ fn stokes_to_dada(
                 }
                 Signal::NewAvg => {
                     // Get a lock of the avg shared memory
-                    let avg = &(*avg_mutex.lock().unwrap());
+                    let avg = &*avg_mutex.lock().unwrap();
                     // Push the incoming average to the right place in the output
                     // block.write_all(avg.as_byte_slice()).unwrap();
                     // If this was the first one, update the start time
@@ -84,7 +84,7 @@ fn stokes_to_dada(
 fn udp_to_avg(
     udp: pcap::Device,
     port: u16,
-    avg_mutex: Arc<Mutex<[u16; CHANNELS]>>,
+    avg_mutex: Arc<Mutex<Vec<u16>>>,
     sig_tx: Sender<Signal>,
 ) {
     // Locals
@@ -112,17 +112,16 @@ fn udp_to_avg(
         // Unpack
         payload_to_spectra(payload, &mut pol_x, &mut pol_y);
         // Generate stokes and push to averaging window
+        let avg = &mut *avg_mutex.lock().unwrap();
+        for i in 0..PAYLOAD_SIZE {
+            avg[i * AVG_SIZE] = stokes_i(pol_x[i], pol_y[i]);
+        }
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
             // Reset the counter
             avg_cnt = 0;
             // Generate average
-            let avg = &mut (*avg_mutex.lock().unwrap());
-            // Just decimate by avg
-            for i in 0..CHANNELS {
-                avg[i] = stokes_i(pol_x[i], pol_y[i]);
-            }
-            //avg_from_window(&avg_window, avg);
+            avg_from_window::<AVG_SIZE>(&avg_window, avg);
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
@@ -144,7 +143,7 @@ fn main() -> std::io::Result<()> {
 
     // Setup multithreading
     // We'll use a mutex to hold the average that we'll pass to the dada consumer
-    let avg_mutex = Arc::new(Mutex::new([0u16; CHANNELS]));
+    let avg_mutex = Arc::new(Mutex::new(vec![0u16; CHANNELS]));
     // And then use a channel for state messaging
     let (sig_tx, sig_rx) = unbounded();
 
@@ -157,7 +156,7 @@ fn main() -> std::io::Result<()> {
     // Setup listener socket
     let stokes_stream = TcpListener::bind("0.0.0.0:4242").unwrap();
     println!("Waiting for listen connection");
-    let (mut stokes_socket, _) = stokes_stream.accept()?;
+    let (stokes_socket, _) = stokes_stream.accept()?;
 
     // Setup PSRDADA
     // let client = DadaClientBuilder::new(dada_key)

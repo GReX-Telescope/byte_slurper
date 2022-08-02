@@ -73,7 +73,7 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16; N]) {
+pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
     let chunks = input.len() / N;
     let shift = chunks / 2;
     input
