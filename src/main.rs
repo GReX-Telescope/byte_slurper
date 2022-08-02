@@ -114,8 +114,7 @@ fn udp_to_avg(
         // Generate stokes and push to averaging window
         // We have to transpose the data here so the averaging sums are sequential in memory
         for (i, j) in (0..AVG_WINDOW_SIZE).step_by(AVG_SIZE).enumerate() {
-            println!("{},{}", i, j);
-            avg_window[i] = stokes_i(pol_x[j], pol_y[j]);
+            avg_window[j] = stokes_i(pol_x[i], pol_y[i]);
         }
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
