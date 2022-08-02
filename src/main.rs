@@ -49,6 +49,8 @@ fn stokes_to_dada(
                 Signal::NewAvg => {
                     // Get a lock of the avg shared memory
                     let avg = &*avg_mutex.lock().unwrap();
+                    // Send to TCP viewer
+                    stream.write_all(avg.as_byte_slice()).unwrap();
                     // Push the incoming average to the right place in the output
                     // block.write_all(avg.as_byte_slice()).unwrap();
                     // If this was the first one, update the start time
@@ -60,8 +62,6 @@ fn stokes_to_dada(
                     // If we've filled the window, generate the header and send the whole thing
                     if stokes_cnt == NSAMP {
                         println!("New window");
-                        // Send to TCP viewer
-                        stream.write_all(avg.as_byte_slice()).unwrap();
                         // Reset the stokes counter
                         stokes_cnt = 0;
                         // update header time
@@ -121,7 +121,11 @@ fn udp_to_avg(
             avg_cnt = 0;
             // Generate average
             let avg = &mut *avg_mutex.lock().unwrap();
-            avg_from_window::<CHANNELS>(&avg_window, avg);
+            //avg_from_window::<CHANNELS>(&avg_window, avg);
+            // Just send one for now
+            for i in 0..CHANNELS {
+                avg[i] = stokes_i(pol_x[i], pol_y[i]);
+            }
             // Signal the consumer that there's new data
             sig_tx.send(Signal::NewAvg).unwrap();
         }
