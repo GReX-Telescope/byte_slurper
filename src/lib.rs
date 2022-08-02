@@ -16,7 +16,7 @@ pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
 // We can figure out sample time
 pub const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Complex<T> {
     re: T,
     im: T,
