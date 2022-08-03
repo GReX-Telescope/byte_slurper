@@ -79,8 +79,8 @@ pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
     input
         .chunks_exact(chunks)
         .into_iter()
-        .map(|chunk| chunk.iter().fold(0u16, |x, y| x + *y as u16))
-        .map(|x| x / chunks as u16)
+        .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
+        .map(|x| (x / chunks as u32) as u16)
         .enumerate()
         .for_each(|(i, v)| output[i] = v);
 }
