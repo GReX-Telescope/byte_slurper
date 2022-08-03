@@ -91,7 +91,7 @@ fn udp_to_avg(
     let mut pol_x = [ComplexByte::default(); CHANNELS];
     let mut pol_y = [ComplexByte::default(); CHANNELS];
     // State to hold the averaging window
-    let mut avg_window = [0u16; AVG_WINDOW_SIZE];
+    let mut avg_window = vec![0u16; AVG_WINDOW_SIZE];
     let mut avg_cnt = 0usize;
     // Capture packets
     let mut cap = pcap::Capture::from_device(udp)
