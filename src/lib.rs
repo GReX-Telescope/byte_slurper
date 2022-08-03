@@ -22,25 +22,22 @@ pub struct Complex<T> {
     im: T,
 }
 
-pub type FpgaByte = i8;
-pub type FixedWord = u16;
-pub type ComplexByte = Complex<FpgaByte>;
+pub type ComplexByte = Complex<i8>;
 
-fn square_byte(byte: FpgaByte) -> FixedWord {
+fn square_byte(byte: i8) -> u16 {
     byte.unsigned_abs() as u16 * byte.unsigned_abs() as u16
 }
 
 // If we need to, these can be unchecked-add
-fn norm_sq(cb: ComplexByte) -> FixedWord {
+fn norm_sq(cb: ComplexByte) -> u16 {
     square_byte(cb.re) + square_byte(cb.im)
 }
 
-// We're done multiplying, so we can come back to u16 land
 pub fn stokes_i(pol_x: ComplexByte, pol_y: ComplexByte) -> u16 {
     norm_sq(pol_x) + norm_sq(pol_y)
 }
 
-fn raw_to_fpga(byte: u8) -> FpgaByte {
+fn raw_to_fpga(byte: u8) -> i8 {
     byte as i8
 }
 
@@ -57,11 +54,11 @@ pub fn payload_to_spectra(
             re: raw_to_fpga(word[7]),
             im: raw_to_fpga(word[6]),
         };
-        let a2 = ComplexByte {
+        let b1 = ComplexByte {
             re: raw_to_fpga(word[5]),
             im: raw_to_fpga(word[4]),
         };
-        let b1 = ComplexByte {
+        let a2 = ComplexByte {
             re: raw_to_fpga(word[3]),
             im: raw_to_fpga(word[2]),
         };
@@ -77,13 +74,13 @@ pub fn payload_to_spectra(
     }
 }
 
-pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [f32]) {
+pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
     let chunks = input.len() / N;
     input
         .chunks_exact(chunks)
         .into_iter()
-        .map(|chunk| chunk.iter().fold(0f32, |x, y| x + *y as f32))
-        .map(|x| x / chunks as f32)
+        .map(|chunk| chunk.iter().fold(0u16, |x, y| x + *y as u16))
+        .map(|x| x / chunks as u16)
         .enumerate()
         .for_each(|(i, v)| output[i] = v);
 }
@@ -111,11 +108,8 @@ mod tests {
 
     #[test]
     fn test_stokes() {
-        let pol_x = Complex { re: 32i8, im: 64i8 };
-        let pol_y = Complex {
-            re: -128i8,
-            im: 127i8,
-        };
-        assert_eq!(37633u16, stokes_i(pol_x, pol_y))
+        let pol_x = Complex { re: -1i8, im: -1i8 };
+        let pol_y = Complex { re: -1i8, im: -1i8 };
+        assert_eq!(4u16, stokes_i(pol_x, pol_y))
     }
 }
