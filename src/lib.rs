@@ -57,11 +57,11 @@ pub fn payload_to_spectra(
             re: raw_to_fpga(word[7]),
             im: raw_to_fpga(word[6]),
         };
-        let b1 = ComplexByte {
+        let a1 = ComplexByte {
             re: raw_to_fpga(word[5]),
             im: raw_to_fpga(word[4]),
         };
-        let a2 = ComplexByte {
+        let b1 = ComplexByte {
             re: raw_to_fpga(word[3]),
             im: raw_to_fpga(word[2]),
         };
