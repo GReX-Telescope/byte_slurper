@@ -5,11 +5,13 @@ use fixed::{
 };
 
 pub const PAYLOAD_SIZE: usize = 8192;
+
+// Don't change these
 pub const WORD_SIZE: usize = 8;
 pub const CHANNELS: usize = 2048;
 
-pub const AVG_SIZE: usize = 512; // At tsamp of 8.192 us, this gives us 1 stoke per 65.536us
-pub const NSAMP: usize = 16; // At stoke time of 65.536, this is a little more than a second
+pub const AVG_SIZE: usize = 8; // At tsamp of 8.192 us, this gives us 1 stoke per 65.536us
+pub const NSAMP: usize = 16384; // At stoke time of 65.536, this is a little more than a second
 pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 // A buffer for the running average
 pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
