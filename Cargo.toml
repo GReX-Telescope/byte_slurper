@@ -25,7 +25,6 @@ rand = "0.8"
 [profile]
 [profile.release]
 lto = true
-panic = "abort"
 
 [[bench]]
 harness = false
