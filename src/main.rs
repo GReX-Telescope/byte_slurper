@@ -14,7 +14,7 @@ fn main() -> ! {
     let port = 60000u16;
     let dada_key = 0xb0ba;
     let device_name = "enp129s0f0";
-    let rr_size = 4usize;
+    let rr_size = 1usize;
     let rb_capacity = 256usize;
 
     // Grab the pcap device that matches this interface
