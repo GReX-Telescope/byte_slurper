@@ -11,7 +11,7 @@ use psrdada::builder::DadaClientBuilder;
 use crate::capture::{unpack, PayloadBytes};
 
 // How many averages do we take (as the power of 2)
-const AVG_SIZE_POW: usize = 3;
+const AVG_SIZE_POW: usize = 4;
 // 2^3 = 8 averages
 const AVG_SIZE: usize = 2usize.pow(AVG_SIZE_POW as u32);
 // How big is the averaging window (elements, not bytes)
@@ -22,7 +22,7 @@ pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 // How many of the averaged time slices do we put in the window we're sending to heimdall
 // At stoke time of 65.536, this is a little more than a second
-const NSAMP: usize = 16384;
+const NSAMP: usize = 8192;
 
 /// Convert a chronno DateTime into a heimdall-compatible timestamp string
 fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
