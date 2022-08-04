@@ -1,7 +1,7 @@
 //! This module contains all the capture logic
 
 use byte_slurper::PAYLOAD_SIZE;
-use tracing::warn;
+use tracing::{info, warn};
 
 type PayloadBytes = [u8; PAYLOAD_SIZE];
 
