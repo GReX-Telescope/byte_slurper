@@ -122,30 +122,30 @@ pub fn exfil_consumer(
             if avg_cnt == AVG_SIZE {
                 // Reset the counter
                 avg_cnt = 0;
-                // // Generate the average from the window and add to the correct position in the output block
-                // let avg = avg_from_window(&avg_window, AVG_SIZE_POW);
-                // // block
-                // //     .write_all(avg_from_window(avg.as_byte_slice())
-                // //     .unwrap();
-                // // If this was the first one, update the start time
-                // if stokes_cnt == 0 {
-                //     first_sample_time = Utc::now();
-                // }
-                // stokes_cnt += 1;
-                // // If we've filled the window, generate the header and send it to PSRDADA
-                // if stokes_cnt == NSAMP {
-                //     // Reset the stokes counter
-                //     stokes_cnt = 0;
-                //     header
-                //         .entry("UTC_START".to_owned())
-                //         .or_insert_with(|| heimdall_timestamp(&first_sample_time));
-                //     // Safety: All these header keys and values are valid
-                //     // unsafe { hc.push_header(&header).unwrap() };
-                //     // Commit data and update
-                //     // block.commit();
-                //     //Break to finish the write
-                //     break;
-                // }
+                // Generate the average from the window and add to the correct position in the output block
+                let avg = avg_from_window(&avg_window, AVG_SIZE_POW);
+                // block
+                //     .write_all(avg_from_window(avg.as_byte_slice())
+                //     .unwrap();
+                // If this was the first one, update the start time
+                if stokes_cnt == 0 {
+                    first_sample_time = Utc::now();
+                }
+                stokes_cnt += 1;
+                // If we've filled the window, generate the header and send it to PSRDADA
+                if stokes_cnt == NSAMP {
+                    // Reset the stokes counter
+                    stokes_cnt = 0;
+                    header
+                        .entry("UTC_START".to_owned())
+                        .or_insert_with(|| heimdall_timestamp(&first_sample_time));
+                    // Safety: All these header keys and values are valid
+                    // unsafe { hc.push_header(&header).unwrap() };
+                    // Commit data and update
+                    // block.commit();
+                    //Break to finish the write
+                    break;
+                }
             }
         }
     }
