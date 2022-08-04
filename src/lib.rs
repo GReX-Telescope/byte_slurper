@@ -1,5 +1,3 @@
-#![feature(int_log)]
-
 use chrono::{DateTime, Datelike, Timelike, Utc};
 
 // Don't change these (set by the framing of the ethernet stuff)
@@ -82,17 +80,17 @@ pub fn payload_to_spectra(
 }
 
 /// Average from a fixed window with `N` channels
-pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
-    let chunks = input.len() / N;
-    let shift = AVG_SIZE.log2();
-    input
-        .chunks_exact(chunks)
-        .into_iter()
-        .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
-        .map(|x| (x >> shift) as u16)
-        .enumerate()
-        .for_each(|(i, v)| output[i] = v);
-}
+// pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
+//     let chunks = input.len() / N;
+//     let shift = AVG_SIZE.log2();
+//     input
+//         .chunks_exact(chunks)
+//         .into_iter()
+//         .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
+//         .map(|x| (x >> shift) as u16)
+//         .enumerate()
+//         .for_each(|(i, v)| output[i] = v);
+// }
 
 pub enum Signal {
     NewAvg,
