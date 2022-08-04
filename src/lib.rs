@@ -1,21 +1,26 @@
+#![feature(int_log)]
+
 use chrono::{DateTime, Datelike, Timelike, Utc};
-use fixed::{
-    types::extra::{U14, U7},
-    FixedI16, FixedI8,
-};
 
-pub const PAYLOAD_SIZE: usize = 8192;
-
-// Don't change these
+// Don't change these (set by the framing of the ethernet stuff)
 pub const WORD_SIZE: usize = 8;
 pub const CHANNELS: usize = 2048;
+pub const PAYLOAD_SIZE: usize = 8192;
 
-pub const AVG_SIZE: usize = 8; // At tsamp of 8.192 us, this gives us 1 stoke per 65.536us
-pub const NSAMP: usize = 16384; // At stoke time of 65.536, this is a little more than a second
+// How many UDP samples do we average
+// This needs to be a power of 2 so we can average easily with a bit shift
+// At tsamp of 8.192 us, 8 gives us 1 stoke per 65.536us
+pub const AVG_SIZE: usize = 8;
+// How many of the averaged time slices do we put in the window we're sending to heimdall
+// At stoke time of 65.536, this is a little more than a second
+pub const NSAMP: usize = 16384;
+
+// ----- Calculated constants
+// How big is the psrdada window (elements, not bytes)
 pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
-// A buffer for the running average
+// How big is the averaging window (elements, not bytes)
 pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
-// We can figure out sample time
+// Sample time after averaging
 pub const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -76,27 +81,17 @@ pub fn payload_to_spectra(
     }
 }
 
+/// Average from a fixed window with `N` channels
 pub fn avg_from_window<const N: usize>(input: &[u16], output: &mut [u16]) {
     let chunks = input.len() / N;
+    let shift = AVG_SIZE.log2();
     input
         .chunks_exact(chunks)
         .into_iter()
         .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
-        .map(|x| (x / chunks as u32) as u16)
+        .map(|x| (x >> shift) as u16)
         .enumerate()
         .for_each(|(i, v)| output[i] = v);
-}
-
-pub fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
-    format!(
-        "{}-{:02}-{:02}-{:02}:{:02}:{:02}",
-        time.year(),
-        time.month(),
-        time.day(),
-        time.hour(),
-        time.minute(),
-        time.second()
-    )
 }
 
 pub enum Signal {
