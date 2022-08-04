@@ -61,6 +61,7 @@ fn avg_from_window(input: &[u16], pow: usize) -> Vec<u16> {
 
 /// Grab bytes from the capture thread to get them all the way to heimdall.
 /// This doesn't need to be realtime, because we have cushion from the rtrb.
+/// This function needs to run at less than 8us (on average).
 pub fn exfil_consumer(
     client_builder: DadaClientBuilder,
     mut consumer: rtrb::Consumer<PayloadBytes>,

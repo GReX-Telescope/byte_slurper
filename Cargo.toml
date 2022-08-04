@@ -22,9 +22,9 @@ log = "0.4"
 criterion = "0.3"
 rand = "0.8"
 
-[profile]
 [profile.release]
 lto = true
+debug = 1
 
 [[bench]]
 harness = false
