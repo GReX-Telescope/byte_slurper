@@ -97,7 +97,7 @@ pub fn exfil_consumer(
     // Start the main consumer loop
     loop {
         // Grab the next psrdada block we can write to
-        let mut block = data_writer.next().unwrap();
+        // let mut block = data_writer.next().unwrap();
         loop {
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
@@ -122,9 +122,10 @@ pub fn exfil_consumer(
                 // Reset the counter
                 avg_cnt = 0;
                 // Generate the average from the window and add to the correct position in the output block
-                block
-                    .write_all(avg_from_window(&avg_window, AVG_SIZE_POW).as_byte_slice())
-                    .unwrap();
+                let avg = avg_from_window(&avg_window, AVG_SIZE_POW);
+                // block
+                //     .write_all(avg_from_window(avg.as_byte_slice())
+                //     .unwrap();
                 // If this was the first one, update the start time
                 if stokes_cnt == 0 {
                     first_sample_time = Utc::now();
@@ -138,9 +139,9 @@ pub fn exfil_consumer(
                         .entry("UTC_START".to_owned())
                         .or_insert_with(|| heimdall_timestamp(&first_sample_time));
                     // Safety: All these header keys and values are valid
-                    unsafe { hc.push_header(&header).unwrap() };
+                    // unsafe { hc.push_header(&header).unwrap() };
                     // Commit data and update
-                    block.commit();
+                    // block.commit();
                     //Break to finish the write
                     break;
                 }
