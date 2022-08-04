@@ -1,6 +1,7 @@
 //! This module contains all the capture logic
 
 use byte_slurper::PAYLOAD_SIZE;
+use tracing::warn;
 
 type PayloadBytes = [u8; PAYLOAD_SIZE];
 
@@ -15,11 +16,13 @@ pub fn capture_udp(
             packet = pak;
         } else {
             // Keep truckin, we don't care!
+            warn!("libpcap error");
             continue;
         }
         let data = &packet.data[42..];
         // Skip bad packets (we should probably count how often this happens)
         if data.len() != PAYLOAD_SIZE {
+            warn!("Got a payload of a size we didn't expect, throwing out");
             continue;
         }
         // Memcpy payload to payload
