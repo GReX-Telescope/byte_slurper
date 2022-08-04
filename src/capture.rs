@@ -25,6 +25,7 @@ pub fn capture_udp(
             warn!("Got a payload of a size we didn't expect, throwing out");
             continue;
         }
+        info!("Got a good payload");
         // Memcpy payload to payload
         payload.copy_from_slice(data);
         // Send to ringbuffer
