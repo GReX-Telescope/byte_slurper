@@ -1,14 +1,15 @@
 use args::convert_filter;
-use byte_slurper::PAYLOAD_SIZE;
-use capture::consume_and_drop;
+use capture::PAYLOAD_SIZE;
 use clap::Parser;
+use exfil::{exfil_consumer, WINDOW_SIZE};
+use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
 use crate::{args::Args, capture::capture_udp};
 
 mod args;
 mod capture;
-// mod exfil;
+mod exfil;
 // mod monitoring;
 
 fn main() -> ! {
@@ -42,8 +43,15 @@ fn main() -> ! {
     // Create rtrb pairs
     let (producer, consumer) = RingBuffer::new(args.capacity);
 
-    // For each consumer, make a thread that does the thing
-    std::thread::spawn(move || consume_and_drop(consumer));
+    // Setup PSRDADA
+    let client_builder = DadaClientBuilder::new(args.key)
+        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+        .num_bufs(8)
+        .num_headers(8)
+        .lock(true);
+
+    // Spawn the exfil thread
+    std::thread::spawn(move || exfil_consumer(client_builder, consumer));
 
     // Startup the main capture thread
     capture_udp(cap, producer);

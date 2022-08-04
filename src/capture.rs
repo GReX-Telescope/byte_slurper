@@ -1,9 +1,16 @@
 //! This module contains all the capture logic
 
-use byte_slurper::PAYLOAD_SIZE;
-use tracing::{info, warn};
+use byte_slurper::Complex;
+use tracing::warn;
 
-type PayloadBytes = [u8; PAYLOAD_SIZE];
+// FPGA UDP "Word" size (8 bytes as per CASPER docs)
+const WORD_SIZE: usize = 8;
+// 8192 bytes for 1 chunk of 2048 channels
+pub const PAYLOAD_SIZE: usize = 8192;
+// UDP Header size (spec-defined)
+const UDP_HEADER_SIZE: usize = 42;
+
+pub type PayloadBytes = [u8; PAYLOAD_SIZE];
 
 pub fn capture_udp(
     mut cap: pcap::Capture<pcap::Active>,
@@ -19,13 +26,11 @@ pub fn capture_udp(
             warn!("libpcap error");
             continue;
         }
-        let data = &packet.data[42..];
+        let data = &packet.data[UDP_HEADER_SIZE..];
         // Skip bad packets (we should probably count how often this happens)
         if data.len() != PAYLOAD_SIZE {
-            warn!("Got a payload of a size we didn't expect, throwing out");
             continue;
         }
-        info!("Got a good payload");
         // Memcpy payload to payload
         payload.copy_from_slice(data);
         // Send to ringbuffer
@@ -35,13 +40,38 @@ pub fn capture_udp(
     }
 }
 
-pub fn consume_and_drop(mut consumer: rtrb::Consumer<PayloadBytes>) -> ! {
-    loop {
-        if consumer.pop().is_ok() {
-        } else {
-            // Spin until there's data
-            // We could yield, but thats a 15ms penalty because linux
-            continue;
-        }
+/// Unpacks a raw UDP payload into the two polarizations
+pub fn unpack<const N: usize>(
+    payload: &[u8],
+    pol_a: &mut [Complex<i8>; N],
+    pol_b: &mut [Complex<i8>; N],
+) {
+    for (i, word) in payload.chunks_exact(WORD_SIZE).enumerate() {
+        // Each word contains two frequencies for each polarization
+        // [A1 B1 A2 B2]
+        // Where each channel is [Re Im] as FixedI8<7>
+        pol_a[2 * i] = Complex::new(word[0] as i8, word[1] as i8);
+        pol_a[2 * i + 1] = Complex::new(word[4] as i8, word[5] as i8);
+        pol_b[2 * i] = Complex::new(word[2] as i8, word[3] as i8);
+        pol_b[2 * i + 1] = Complex::new(word[6] as i8, word[7] as i8);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use byte_slurper::Complex;
+
+    use super::*;
+
+    #[test]
+    fn test_unpack() {
+        let payload: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
+        let mut pol_a: [Complex<i8>; 2] = Default::default();
+        let mut pol_b: [Complex<i8>; 2] = Default::default();
+        unpack(&payload, &mut pol_a, &mut pol_b);
+        assert_eq!(pol_a[0], Complex { re: 1i8, im: 2i8 });
+        assert_eq!(pol_b[0], Complex { re: 3i8, im: 4i8 });
+        assert_eq!(pol_a[1], Complex { re: 5i8, im: 6i8 });
+        assert_eq!(pol_b[1], Complex { re: 7i8, im: 8i8 });
     }
 }
