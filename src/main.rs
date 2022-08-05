@@ -5,7 +5,7 @@ use byte_slurper::{
     monitoring::listen_consumer,
 };
 use clap::Parser;
-use crossbeam_channel::unbounded;
+use crossbeam_channel::bounded;
 use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
@@ -48,7 +48,7 @@ fn main() -> ! {
         .lock(true);
 
     // Setup the monitoring channel
-    let (tcp_s, tcp_r) = unbounded();
+    let (tcp_s, tcp_r) = bounded(5);
 
     // Spawn the exfil thread
     std::thread::spawn(move || exfil_consumer(client_builder, consumer, tcp_s));
