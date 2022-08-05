@@ -15,6 +15,10 @@ pub struct Args {
     #[clap(short, long, default_value_t = 60000)]
     #[clap(value_parser = clap::value_parser!(u16).range(1..))]
     pub port: u16,
+    /// Port to send TCP average spectra to
+    #[clap(short, long, default_value_t = 4242)]
+    #[clap(value_parser = clap::value_parser!(u16).range(1..))]
+    pub listen_port: u16,
     /// Ring buffer capacity
     #[clap(short, long, default_value_t = 256)]
     pub capacity: usize,

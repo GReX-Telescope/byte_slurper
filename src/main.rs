@@ -2,8 +2,10 @@ use byte_slurper::{
     args::{convert_filter, Args},
     capture::{capture_udp, PAYLOAD_SIZE},
     exfil::{exfil_consumer, WINDOW_SIZE},
+    monitoring::listen_consumer,
 };
 use clap::Parser;
+use crossbeam_channel::unbounded;
 use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
@@ -45,8 +47,14 @@ fn main() -> ! {
         .num_headers(8)
         .lock(true);
 
+    // Setup the monitoring channel
+    let (tcp_s, tcp_r) = unbounded();
+
     // Spawn the exfil thread
-    std::thread::spawn(move || exfil_consumer(client_builder, consumer));
+    std::thread::spawn(move || exfil_consumer(client_builder, consumer, tcp_s));
+
+    // Spawn the monitoring thread
+    std::thread::spawn(move || listen_consumer(tcp_r, args.listen_port));
 
     // Startup the main capture thread
     capture_udp(cap, producer)

@@ -4,6 +4,7 @@ use std::{collections::HashMap, io::Write};
 
 use byte_slice_cast::AsByteSlice;
 use chrono::{DateTime, Datelike, Timelike, Utc};
+use crossbeam_channel::Sender;
 use lending_iterator::LendingIterator;
 use psrdada::builder::DadaClientBuilder;
 
@@ -86,6 +87,7 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
 pub fn exfil_consumer(
     client_builder: DadaClientBuilder,
     mut consumer: rtrb::Consumer<PayloadBytes>,
+    mut tcp_sender: Sender<[u16; CHANNELS]>,
 ) -> ! {
     // Containers for parsed spectra
     let mut pol_a = [ComplexByte::default(); CHANNELS];
@@ -120,7 +122,7 @@ pub fn exfil_consumer(
     // Start the main consumer loop
     loop {
         // Grab the next psrdada block we can write to
-        // let mut block = data_writer.next().unwrap();
+        //let mut block = data_writer.next().unwrap();
         loop {
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
@@ -144,6 +146,8 @@ pub fn exfil_consumer(
                 avg_cnt = 0;
                 // Generate the average from the window and add to the correct position in the output block
                 avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
+                // Send this average over to the TCP listender
+                tcp_sender.send(avg).unwrap();
                 // block.write_all(avg.as_byte_slice()).unwrap();
                 // If this was the first one, update the start time
                 if stokes_cnt == 0 {
