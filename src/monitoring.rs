@@ -43,6 +43,7 @@ pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16) -> ! {
                     Ok(_) => (),
                     Err(_) => break,
                 };
+                avg = [0f32; CHANNELS];
             }
         }
     }
