@@ -1,7 +1,8 @@
 //! This module contains all the capture logic
 
-use byte_slurper::Complex;
 use tracing::warn;
+
+use crate::complex::Complex;
 
 // FPGA UDP "Word" size (8 bytes as per CASPER docs)
 const WORD_SIZE: usize = 8;
@@ -59,8 +60,6 @@ pub fn unpack<const N: usize>(
 
 #[cfg(test)]
 mod tests {
-    use byte_slurper::Complex;
-
     use super::*;
 
     #[test]

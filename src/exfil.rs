@@ -3,26 +3,30 @@
 use std::{collections::HashMap, io::Write};
 
 use byte_slice_cast::AsByteSlice;
-use byte_slurper::{ComplexByte, CHANNELS};
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use lending_iterator::LendingIterator;
 use psrdada::builder::DadaClientBuilder;
 
-use crate::capture::{unpack, PayloadBytes};
+use crate::{
+    capture::{unpack, PayloadBytes},
+    complex::ComplexByte,
+};
 
+// Set by FPGA
+pub const CHANNELS: usize = 2048;
 // How many averages do we take (as the power of 2)
-const AVG_SIZE_POW: usize = 5;
+pub const AVG_SIZE_POW: usize = 2;
 // 2^3 = 8 averages
 const AVG_SIZE: usize = 2usize.pow(AVG_SIZE_POW as u32);
 // How big is the averaging window (elements, not bytes)
-const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
+pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
 // How big is the psrdada window (elements, not bytes)
 pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 // Sample time after averaging
 const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 // How many of the averaged time slices do we put in the window we're sending to heimdall
 // At stoke time of 65.536, this is a little more than a second
-const NSAMP: usize = 4096;
+const NSAMP: usize = 16384;
 
 /// Convert a chronno DateTime into a heimdall-compatible timestamp string
 fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
@@ -49,14 +53,31 @@ pub fn stokes_i(pol_x: ComplexByte, pol_y: ComplexByte) -> u16 {
     norm_sq(pol_x) + norm_sq(pol_y)
 }
 
+pub fn push_to_avg_window(
+    window: &mut [u16],
+    pol_a: &[ComplexByte],
+    pol_b: &[ComplexByte],
+    row: usize,
+) {
+    assert_eq!(window.len(), AVG_WINDOW_SIZE);
+    assert_eq!(pol_a.len(), CHANNELS);
+    assert_eq!(pol_b.len(), CHANNELS);
+    for i in 0..CHANNELS {
+        window[(i * AVG_SIZE) + row] = stokes_i(pol_a[i], pol_b[i]);
+    }
+}
+
 /// Average from a fixed window into the output with a power of 2 (`pow`) window size
-fn avg_from_window(input: &[u16], pow: usize) -> Vec<u16> {
+pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
+    assert_eq!(input.len(), AVG_WINDOW_SIZE);
+    assert_eq!(output.len(), CHANNELS);
     input
         .chunks_exact(2usize.pow(pow as u32))
         .into_iter()
         .map(|chunk| chunk.iter().fold(0u32, |x, y| x + *y as u32))
         .map(|x| (x >> pow) as u16)
-        .collect()
+        .enumerate()
+        .for_each(|(i, v)| output[i] = v);
 }
 
 /// Grab bytes from the capture thread to get them all the way to heimdall.
@@ -69,8 +90,9 @@ pub fn exfil_consumer(
     // Containers for parsed spectra
     let mut pol_a = [ComplexByte::default(); CHANNELS];
     let mut pol_b = [ComplexByte::default(); CHANNELS];
-    // Averaging window - heap allocated so we don't blow our stack
-    let mut avg_window = vec![0u16; AVG_WINDOW_SIZE];
+    // Averaging window
+    let mut avg_window = [0u16; AVG_WINDOW_SIZE];
+    let mut avg = [0u16; CHANNELS];
     let mut avg_cnt = 0usize;
     // DADA window
     let mut stokes_cnt = 0usize;
@@ -114,16 +136,14 @@ pub fn exfil_consumer(
             // Generate stokes for this sample and push to averaging window
             // This is a transpose operation because the average calculation needs the time axis
             // to be contiguous as that's what we're summing over
-            for i in 0..CHANNELS {
-                avg_window[(i * AVG_SIZE) + avg_cnt] = stokes_i(pol_a[i], pol_b[i]);
-            }
+            push_to_avg_window(&mut avg_window, &pol_a, &pol_b, avg_cnt);
             avg_cnt += 1;
             // If we've filled the averaging window, move on to the next step
             if avg_cnt == AVG_SIZE {
                 // Reset the counter
                 avg_cnt = 0;
                 // Generate the average from the window and add to the correct position in the output block
-                let avg = avg_from_window(&avg_window, AVG_SIZE_POW);
+                avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
                 block.write_all(avg.as_byte_slice()).unwrap();
                 // If this was the first one, update the start time
                 if stokes_cnt == 0 {
@@ -151,9 +171,8 @@ pub fn exfil_consumer(
 
 #[cfg(test)]
 mod tests {
-    use byte_slurper::Complex;
-
     use super::*;
+    use crate::complex::Complex;
 
     #[test]
     fn test_stokes() {

@@ -1,16 +1,11 @@
-use args::convert_filter;
-use capture::PAYLOAD_SIZE;
+use byte_slurper::{
+    args::{convert_filter, Args},
+    capture::{capture_udp, PAYLOAD_SIZE},
+    exfil::{exfil_consumer, WINDOW_SIZE},
+};
 use clap::Parser;
-use exfil::{exfil_consumer, WINDOW_SIZE};
 use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
-
-use crate::{args::Args, capture::capture_udp};
-
-mod args;
-mod capture;
-mod exfil;
-// mod monitoring;
 
 fn main() -> ! {
     // Parse args
@@ -54,5 +49,5 @@ fn main() -> ! {
     std::thread::spawn(move || exfil_consumer(client_builder, consumer));
 
     // Startup the main capture thread
-    capture_udp(cap, producer);
+    capture_udp(cap, producer)
 }
