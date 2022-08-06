@@ -48,7 +48,7 @@ fn main() -> ! {
         .lock(true);
 
     // Setup the monitoring channel
-    let (tcp_s, tcp_r) = bounded(5);
+    let (tcp_s, tcp_r) = bounded(1);
 
     // Spawn the exfil thread
     std::thread::spawn(move || exfil_consumer(client_builder, consumer, tcp_s));

@@ -11,8 +11,8 @@ use tracing::info;
 
 use crate::exfil::CHANNELS;
 
-// At incoming samples at 8us, if we're averaging over there by 4, this is about 250ms
-const TCP_CLIENT_AVG: usize = 8192;
+// At incoming samples at 8us, if we're averaging over there by 4, this is about 62.5ms
+const TCP_CLIENT_AVG: usize = 2048;
 
 pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16) -> ! {
     let mut avg = [0f32; CHANNELS];
