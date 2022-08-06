@@ -12,6 +12,10 @@ use rtrb::RingBuffer;
 fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
     let (sender, receiver) = bounded(100);
     ctrlc::set_handler(move || {
+        // Until I find a better way, we need to send one message per thread
+        // Which right now is 3
+        let _ = sender.send(());
+        let _ = sender.send(());
         let _ = sender.send(());
     })?;
 
