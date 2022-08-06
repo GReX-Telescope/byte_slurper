@@ -4,7 +4,7 @@ use std::{collections::HashMap, io::Write};
 
 use byte_slice_cast::AsByteSlice;
 use chrono::{DateTime, Datelike, Timelike, Utc};
-use crossbeam_channel::Sender;
+use crossbeam_channel::{Receiver, Sender};
 use lending_iterator::LendingIterator;
 use psrdada::builder::DadaClientBuilder;
 
@@ -88,7 +88,8 @@ pub fn exfil_consumer(
     client_builder: DadaClientBuilder,
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
-) -> ! {
+    ctrlc_r: Receiver<()>,
+) {
     // Containers for parsed spectra
     let mut pol_a = [ComplexByte::default(); CHANNELS];
     let mut pol_b = [ComplexByte::default(); CHANNELS];
@@ -124,6 +125,10 @@ pub fn exfil_consumer(
         // Grab the next psrdada block we can write to (BLOCKING)
         //let mut block = data_writer.next().unwrap();
         loop {
+            // Check for ctrlc
+            if ctrlc_r.try_recv().is_ok() {
+                return;
+            }
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
             let payload;
