@@ -9,6 +9,7 @@ use crossbeam_channel::{bounded, Receiver};
 use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
+// WIP not working yet
 fn ctrl_channel() -> Result<Receiver<()>, ctrlc::Error> {
     let (sender, receiver) = bounded(100);
     ctrlc::set_handler(move || {
