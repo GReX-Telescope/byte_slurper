@@ -110,8 +110,8 @@ pub fn exfil_consumer(
         ("NPOL".to_owned(), "1".to_owned()),
         ("NBIT".to_owned(), "16".to_owned()),
         ("OBS_OFFSET".to_owned(), 0.to_string()),
-        ("FILE_SIZE".to_owned(), (2 * WINDOW_SIZE).to_string()),
-        ("HDR_SIZE".to_owned(), 4096.to_string()),
+        // ("FILE_SIZE".to_owned(), (2 * WINDOW_SIZE).to_string()),
+        // ("HDR_SIZE".to_owned(), 4096.to_string()),
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
         (
             "UTC_START".to_owned(),
