@@ -55,11 +55,11 @@ fn main() {
     let (producer, consumer) = RingBuffer::new(args.capacity);
 
     // Setup PSRDADA
-    // let client_builder = DadaClientBuilder::new(args.key)
-    //     .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-    //     .num_bufs(16)
-    //     .num_headers(16)
-    //     .lock(true);
+    let client_builder = DadaClientBuilder::new(args.key)
+        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
+        .num_bufs(16)
+        .num_headers(16)
+        .lock(true);
 
     // Setup the monitoring channel
     let (tcp_s, tcp_r) = bounded(1);
@@ -71,7 +71,7 @@ fn main() {
 
     // Spawn the exfil thread
     let exfil_handle =
-        std::thread::spawn(move || exfil_consumer(args.key, consumer, tcp_s, ctrlc_r_exfil));
+        std::thread::spawn(move || exfil_consumer(client_builder, consumer, tcp_s, ctrlc_r_exfil));
 
     // Spawn the monitoring thread
     let listen_handle =

@@ -85,7 +85,8 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
 /// This doesn't need to be realtime, because we have cushion from the rtrb.
 /// This function needs to run at less than 8us (on average).
 pub fn exfil_consumer(
-    key: i32,
+    client_builder: DadaClientBuilder,
+    //key: i32,
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
     ctrlc_r: Receiver<()>,
@@ -119,8 +120,8 @@ pub fn exfil_consumer(
         ),
     ]);
     // Finish building the PSRDADA client on this thread
-    // let mut client = client_builder.build().unwrap();
-    let mut client = DadaClient::new(key).unwrap();
+    let mut client = client_builder.build().unwrap();
+    // let mut client = DadaClient::new(key).unwrap();
     // Grab PSRDADA writing context
     let (mut hc, mut dc) = client.split();
     let mut data_writer = dc.writer();
