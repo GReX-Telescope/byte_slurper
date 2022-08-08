@@ -57,8 +57,8 @@ fn main() {
     // Setup PSRDADA
     let client_builder = DadaClientBuilder::new(args.key)
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-        .num_bufs(8)
-        .num_headers(8)
+        .num_bufs(16)
+        .num_headers(16)
         .lock(true);
 
     // Setup the monitoring channel
