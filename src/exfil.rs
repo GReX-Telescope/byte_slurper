@@ -128,7 +128,7 @@ pub fn exfil_consumer(
     // Start the main consumer loop
     loop {
         // Grab the next psrdada block we can write to (BLOCKING)
-        // let mut block = data_writer.next().unwrap();
+        let mut block = data_writer.next().unwrap();
         loop {
             // Check for ctrlc
             if ctrlc_r.try_recv().is_ok() {
@@ -158,7 +158,7 @@ pub fn exfil_consumer(
                 avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
                 // Send this average over to the TCP listender, we don't care if this errors
                 let _ = tcp_sender.try_send(avg);
-                // block.write_all(avg.as_byte_slice()).unwrap();
+                block.write_all(avg.as_byte_slice()).unwrap();
                 // If this was the first one, update the start time
                 if stokes_cnt == 0 {
                     first_sample_time = Utc::now();
@@ -172,9 +172,9 @@ pub fn exfil_consumer(
                         .entry("UTC_START".to_owned())
                         .or_insert_with(|| heimdall_timestamp(&first_sample_time));
                     // Safety: All these header keys and values are valid
-                    // unsafe { hc.push_header(&header).unwrap() };
+                    unsafe { hc.push_header(&header).unwrap() };
                     // Commit data and update
-                    // block.commit();
+                    block.commit();
                     //Break to finish the write
                     break;
                 }
