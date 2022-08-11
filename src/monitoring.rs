@@ -14,7 +14,7 @@ use crate::exfil::CHANNELS;
 // At incoming samples at 8us, if we're averaging over there by 4, this is about 62.5ms
 const TCP_CLIENT_AVG: usize = 2048;
 
-pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16, ctrlc_r: Receiver<()>) {
+pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16) {
     let mut avg = [0f32; CHANNELS];
     // Setup listeners
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
@@ -30,9 +30,6 @@ pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16, ctrlc_r: Receiv
         }
         info!("New listen client - starting monitoring");
         loop {
-            if ctrlc_r.try_recv().is_ok() {
-                return;
-            }
             // Grab next stokes sample and add to avg
             rx.recv()
                 .unwrap()

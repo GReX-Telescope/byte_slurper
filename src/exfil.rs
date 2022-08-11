@@ -1,12 +1,18 @@
 //! This module is responsible for exfilling packet data to heimdall
 
-use std::{collections::HashMap, io::Write};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{prelude::*, Write},
+};
 
 use byte_slice_cast::AsByteSlice;
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use crossbeam_channel::{Receiver, Sender};
+use hifitime::Epoch;
 use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
+use sigproc_filterbank::write::WriteFilterbank;
 
 use crate::{
     capture::{unpack, PayloadBytes},
@@ -81,15 +87,65 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
         .for_each(|(i, v)| output[i] = v);
 }
 
+/// Basically the same as the dada consumer, expect write to filterbanks instead
+pub fn filterbank_consumer(
+    mut consumer: rtrb::Consumer<PayloadBytes>,
+    tcp_sender: Sender<[u16; CHANNELS]>,
+) {
+    let mut pol_a = [ComplexByte::default(); CHANNELS];
+    let mut pol_b = [ComplexByte::default(); CHANNELS];
+    let mut avg_window = [0u16; AVG_WINDOW_SIZE];
+    let mut avg = [0u16; CHANNELS];
+    let mut avg_cnt = 0usize;
+    let mut stokes_cnt = 0usize;
+    loop {
+        // Create the file
+        let mut file = File::create(format!("{}.fil", heimdall_timestamp(&Utc::now()))).unwrap();
+        // Create the filterbank context
+        let mut fb = WriteFilterbank::new(CHANNELS, 1);
+        // Get current  time
+        let now = Epoch::now().unwrap();
+        // Setup the header stuff
+        fb.fch1 = Some(1280.06103516); // Start of band + half the step size
+        fb.foff = Some(250.0);
+        fb.tsamp = Some(TSAMP as f64);
+        fb.tstart = Some(now.as_mjd_utc_days());
+
+        loop {
+            let payload;
+            if let Ok(pl) = consumer.pop() {
+                payload = pl;
+            } else {
+                continue;
+            }
+            unpack(&payload, &mut pol_a, &mut pol_b);
+            push_to_avg_window(&mut avg_window, &pol_a, &pol_b, avg_cnt);
+            avg_cnt += 1;
+            if avg_cnt == AVG_SIZE {
+                avg_cnt = 0;
+                avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
+                let _ = tcp_sender.try_send(avg);
+                fb.push(&avg);
+                stokes_cnt += 1;
+                if stokes_cnt == NSAMP {
+                    stokes_cnt = 0;
+                    // Write out the file and start over
+                    file.write_all(&fb.bytes()).unwrap();
+                    break;
+                }
+            }
+        }
+    }
+}
+
 /// Grab bytes from the capture thread to get them all the way to heimdall.
 /// This doesn't need to be realtime, because we have cushion from the rtrb.
 /// This function needs to run at less than 8us (on average).
-pub fn exfil_consumer(
+pub fn dada_consumer(
     client_builder: DadaClientBuilder,
     //key: i32,
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
-    ctrlc_r: Receiver<()>,
 ) {
     // Containers for parsed spectra
     let mut pol_a = [ComplexByte::default(); CHANNELS];
@@ -130,10 +186,6 @@ pub fn exfil_consumer(
         // Grab the next psrdada block we can write to (BLOCKING)
         let mut block = data_writer.next().unwrap();
         loop {
-            // Check for ctrlc
-            if ctrlc_r.try_recv().is_ok() {
-                return;
-            }
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
             let payload;

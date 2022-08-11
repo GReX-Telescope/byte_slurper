@@ -5,9 +5,10 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Args {
-    /// Hexadecimal (sans leading 0x) PSRDADA key to create as source for heimdall
+    /// Hexadecimal (sans leading 0x) PSRDADA key to create as source for heimdall.
+    /// If not set, output will be written to filterbank files.
     #[clap(short, long, value_parser = valid_dada_key)]
-    pub key: i32,
+    pub key: Option<i32>,
     /// Network device to capture packets from (MTU must be set to 9000)
     #[clap(short, long)]
     pub device_name: String,

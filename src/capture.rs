@@ -17,13 +17,8 @@ pub type PayloadBytes = [u8; PAYLOAD_SIZE];
 pub fn capture_udp(
     mut cap: pcap::Capture<pcap::Active>,
     mut producer: rtrb::Producer<PayloadBytes>,
-    ctrlc_r: Receiver<()>,
 ) {
     loop {
-        // Check ctrlc
-        if ctrlc_r.try_recv().is_ok() {
-            return;
-        }
         let mut payload = [0u8; PAYLOAD_SIZE];
         let packet;
         if let Ok(pak) = cap.next() {
