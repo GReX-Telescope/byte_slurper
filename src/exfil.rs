@@ -9,7 +9,6 @@ use std::{
 use byte_slice_cast::AsByteSlice;
 use chrono::{DateTime, Datelike, Timelike, Utc};
 use crossbeam_channel::{Receiver, Sender};
-use hifitime::Epoch;
 use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
 use sigproc_filterbank::write::WriteFilterbank;
@@ -46,6 +45,23 @@ fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
         time.minute(),
         time.second()
     )
+}
+
+fn mjd(time: &DateTime<Utc>) -> f32 {
+    let a = time.month() - 14 / 12;
+    let b = 1461 * (time.year() as u32 + 4800 + a);
+    let c = 367 * (time.month() - 2 - 12 * a);
+    let e = (time.year() as u32 + 4900 + a) / 100;
+    let jdn = b / 4 + c / 12 - (3 * e) / 4 + time.day() - 32075;
+    // then the time since UTC noon
+    let sec_since_midnight = time.num_seconds_from_midnight();
+    let sec_since_last_noon = if sec_since_midnight < 43200 {
+        sec_since_midnight + 43200 // Add half a day
+    } else {
+        sec_since_midnight - 43200 // Remove half a day
+    };
+    let frac_day = sec_since_last_noon as f32 / 86400f32;
+    jdn as f32 + frac_day - 2400000.5
 }
 
 fn square_byte(byte: i8) -> u16 {
@@ -104,12 +120,12 @@ pub fn filterbank_consumer(
         // Create the filterbank context
         let mut fb = WriteFilterbank::new(CHANNELS, 1);
         // Get current  time
-        let now = Epoch::now().unwrap();
+        let now = Utc::now();
         // Setup the header stuff
         fb.fch1 = Some(1280.06103516); // Start of band + half the step size
         fb.foff = Some(250.0);
         fb.tsamp = Some(TSAMP as f64);
-        fb.tstart = Some(now.as_mjd_utc_days());
+        fb.tstart = Some(mjd(&now) as f64);
 
         loop {
             let payload;
