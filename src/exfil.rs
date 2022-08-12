@@ -135,14 +135,13 @@ pub fn filterbank_consumer(
         }
         unpack(&payload, &mut pol_a, &mut pol_b);
         push_to_avg_window(&mut avg_window, &pol_a, &pol_b, avg_cnt);
-        // Stream to FB
-        file.write_all(&fb.pack(&avg)).unwrap();
         avg_cnt += 1;
         if avg_cnt == AVG_SIZE {
             avg_cnt = 0;
             avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
             let _ = tcp_sender.try_send(avg);
-            fb.push(&avg);
+            // Stream to FB
+            file.write_all(&fb.pack(&avg)).unwrap();
         }
     }
 }
