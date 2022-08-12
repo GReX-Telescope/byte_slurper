@@ -174,11 +174,8 @@ pub fn dada_consumer(
     let mut avg_cnt = 0usize;
     // DADA window
     let mut stokes_cnt = 0usize;
-    // Setup our timer for the samples
-    // This will need to come from the data eventually
-    let mut first_sample_time = Utc::now();
-    // Create header skeleton
-    let mut header = HashMap::from([
+    // Send the header (heimdall only wants one)
+    let header = HashMap::from([
         ("NCHAN".to_owned(), CHANNELS.to_string()),
         ("BW".to_owned(), "250".to_owned()),
         ("FREQ".to_owned(), "1405".to_owned()),
@@ -188,10 +185,7 @@ pub fn dada_consumer(
         // ("FILE_SIZE".to_owned(), (2 * WINDOW_SIZE).to_string()),
         // ("HDR_SIZE".to_owned(), 4096.to_string()),
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
-        (
-            "UTC_START".to_owned(),
-            heimdall_timestamp(&first_sample_time),
-        ),
+        ("UTC_START".to_owned(), heimdall_timestamp(&Utc::now())),
     ]);
     // Finish building the PSRDADA client on this thread
     let mut client = client_builder.build().unwrap();
@@ -199,6 +193,9 @@ pub fn dada_consumer(
     // Grab PSRDADA writing context
     let (mut hc, mut dc) = client.split();
     let mut data_writer = dc.writer();
+    // Write the single header
+    // Safety: All these header keys and values are valid
+    unsafe { hc.push_header(&header).unwrap() };
     // Start the main consumer loop
     loop {
         // Grab the next psrdada block we can write to (BLOCKING)
@@ -229,20 +226,11 @@ pub fn dada_consumer(
                 // Send this average over to the TCP listender, we don't care if this errors
                 let _ = tcp_sender.try_send(avg);
                 block.write_all(avg.as_byte_slice()).unwrap();
-                // If this was the first one, update the start time
-                if stokes_cnt == 0 {
-                    first_sample_time = Utc::now();
-                }
                 stokes_cnt += 1;
                 // If we've filled the window, generate the header and send it to PSRDADA
                 if stokes_cnt == NSAMP {
                     // Reset the stokes counter
                     stokes_cnt = 0;
-                    header
-                        .entry("UTC_START".to_owned())
-                        .or_insert_with(|| heimdall_timestamp(&first_sample_time));
-                    // Safety: All these header keys and values are valid
-                    unsafe { hc.push_header(&header).unwrap() };
                     // Commit data and update
                     block.commit();
                     //Break to finish the write
