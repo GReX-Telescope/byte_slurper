@@ -11,7 +11,7 @@ use chrono::{DateTime, Datelike, Timelike, Utc};
 use crossbeam_channel::{Receiver, Sender};
 use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
-use sigproc_filterbank::write::WriteFilterbank;
+use sigproc_filterbank::write::{PackSpectra, WriteFilterbank};
 use tracing::info;
 
 use crate::{
@@ -104,7 +104,7 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
         .for_each(|(i, v)| output[i] = v);
 }
 
-/// Basically the same as the dada consumer, expect write to filterbanks instead
+/// Basically the same as the dada consumer, except write to a single instead
 pub fn filterbank_consumer(
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
@@ -114,44 +114,36 @@ pub fn filterbank_consumer(
     let mut avg_window = [0u16; AVG_WINDOW_SIZE];
     let mut avg = [0u16; CHANNELS];
     let mut avg_cnt = 0usize;
-    let mut stokes_cnt = 0usize;
+    // Create the file
+    let mut file = File::create(format!("grex-{}.fil", heimdall_timestamp(&Utc::now()))).unwrap();
+    // Create the filterbank context
+    let mut fb = WriteFilterbank::new(CHANNELS, 1);
+    // Get current  time
+    let now = Utc::now();
+    // Setup the header stuff
+    fb.fch1 = Some(1280.06103516); // Start of band + half the step size
+    fb.foff = Some(250.0);
+    fb.tsamp = Some(TSAMP as f64);
+    fb.tstart = Some(mjd(&now) as f64);
+    // Write out the header
+    file.write_all(&fb.header_bytes()).unwrap();
     loop {
-        // Create the file
-        let mut file = File::create(format!("{}.fil", heimdall_timestamp(&Utc::now()))).unwrap();
-        // Create the filterbank context
-        let mut fb = WriteFilterbank::new(CHANNELS, 1);
-        // Get current  time
-        let now = Utc::now();
-        // Setup the header stuff
-        fb.fch1 = Some(1280.06103516); // Start of band + half the step size
-        fb.foff = Some(250.0);
-        fb.tsamp = Some(TSAMP as f64);
-        fb.tstart = Some(mjd(&now) as f64);
-
-        loop {
-            let payload;
-            if let Ok(pl) = consumer.pop() {
-                payload = pl;
-            } else {
-                continue;
-            }
-            unpack(&payload, &mut pol_a, &mut pol_b);
-            push_to_avg_window(&mut avg_window, &pol_a, &pol_b, avg_cnt);
-            avg_cnt += 1;
-            if avg_cnt == AVG_SIZE {
-                avg_cnt = 0;
-                avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
-                let _ = tcp_sender.try_send(avg);
-                fb.push(&avg);
-                stokes_cnt += 1;
-                if stokes_cnt == NSAMP {
-                    stokes_cnt = 0;
-                    // Write out the file and start over
-                    info!("Writing filterbank");
-                    file.write_all(&fb.bytes()).unwrap();
-                    break;
-                }
-            }
+        let payload;
+        if let Ok(pl) = consumer.pop() {
+            payload = pl;
+        } else {
+            continue;
+        }
+        unpack(&payload, &mut pol_a, &mut pol_b);
+        push_to_avg_window(&mut avg_window, &pol_a, &pol_b, avg_cnt);
+        // Stream to FB
+        file.write_all(&fb.pack(&avg)).unwrap();
+        avg_cnt += 1;
+        if avg_cnt == AVG_SIZE {
+            avg_cnt = 0;
+            avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
+            let _ = tcp_sender.try_send(avg);
+            fb.push(&avg);
         }
     }
 }
