@@ -22,8 +22,7 @@ use crate::{
 // Set by FPGA
 pub const CHANNELS: usize = 2048;
 // How many averages do we take (as the power of 2)
-pub const AVG_SIZE_POW: usize = 5; // 262.144 us
-                                   // 2^3 = 8 averages
+pub const AVG_SIZE_POW: usize = 3; // 65.536 us
 const AVG_SIZE: usize = 2usize.pow(AVG_SIZE_POW as u32);
 // How big is the averaging window (elements, not bytes)
 pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
@@ -104,7 +103,7 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
         .for_each(|(i, v)| output[i] = v);
 }
 
-/// Basically the same as the dada consumer, except write to a single instead
+/// Basically the same as the dada consumer, except write to a filterbank instead with no chunking
 pub fn filterbank_consumer(
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
