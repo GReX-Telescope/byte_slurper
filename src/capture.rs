@@ -1,6 +1,5 @@
 //! This module contains all the capture logic
 
-use crossbeam_channel::Receiver;
 use tracing::warn;
 
 use crate::complex::Complex;
@@ -17,7 +16,7 @@ pub type PayloadBytes = [u8; PAYLOAD_SIZE];
 pub fn capture_udp(
     mut cap: pcap::Capture<pcap::Active>,
     mut producer: rtrb::Producer<PayloadBytes>,
-) {
+) -> ! {
     loop {
         let mut payload = [0u8; PAYLOAD_SIZE];
         let packet;

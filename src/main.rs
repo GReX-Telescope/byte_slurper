@@ -5,7 +5,7 @@ use byte_slurper::{
     monitoring::listen_consumer,
 };
 use clap::Parser;
-use crossbeam_channel::{bounded, Receiver};
+use crossbeam_channel::bounded;
 use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
@@ -53,6 +53,12 @@ fn main() {
         None
     };
 
+    // Panic on ctrl
+    ctrlc::set_handler(move || {
+        panic!();
+    })
+    .expect("Error setting Ctrl-C handler");
+
     // Setup the monitoring channel
     let (tcp_s, tcp_r) = bounded(1);
 
@@ -65,6 +71,6 @@ fn main() {
     // Spawn the monitoring thread
     std::thread::spawn(move || listen_consumer(tcp_r, args.listen_port));
 
-    // Startup the main capture thread - blocks until Ctrl C
+    // Startup the main capture thread
     capture_udp(cap, producer);
 }
