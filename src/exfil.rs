@@ -12,7 +12,7 @@ use crossbeam_channel::{Receiver, Sender};
 use lending_iterator::LendingIterator;
 use psrdada::{builder::DadaClientBuilder, client::DadaClient};
 use sigproc_filterbank::write::{PackSpectra, WriteFilterbank};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     capture::{unpack, PayloadBytes},
@@ -103,6 +103,10 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
         .for_each(|(i, v)| output[i] = v);
 }
 
+fn fullness(c: &rtrb::Consumer<PayloadBytes>) -> f32 {
+    1.0 - c.slots() as f32 / c.buffer().capacity() as f32
+}
+
 /// Basically the same as the dada consumer, except write to a filterbank instead with no chunking
 pub fn filterbank_consumer(
     mut consumer: rtrb::Consumer<PayloadBytes>,
@@ -127,6 +131,10 @@ pub fn filterbank_consumer(
     // Write out the header
     file.write_all(&fb.header_bytes()).unwrap();
     loop {
+        // Check fullness and report
+        if fullness(&consumer) >= 0.9 {
+            warn!("The raw UDP byte ringbuffer is 90% full");
+        }
         let payload;
         if let Ok(pl) = consumer.pop() {
             payload = pl;
@@ -191,6 +199,10 @@ pub fn dada_consumer(
         // Grab the next psrdada block we can write to (BLOCKING)
         let mut block = data_writer.next().unwrap();
         loop {
+            // Check fullness and report
+            if fullness(&consumer) >= 0.9 {
+                warn!("The raw UDP byte ringbuffer is 90% full");
+            }
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
             let payload;
