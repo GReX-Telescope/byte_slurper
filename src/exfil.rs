@@ -104,7 +104,7 @@ pub fn avg_from_window(input: &[u16], pow: usize, output: &mut [u16]) {
 }
 
 fn fullness(c: &rtrb::Consumer<PayloadBytes>) -> f32 {
-    1.0 - c.slots() as f32 / c.buffer().capacity() as f32
+    c.slots() as f32 / c.buffer().capacity() as f32
 }
 
 /// Basically the same as the dada consumer, except write to a filterbank instead with no chunking
