@@ -160,9 +160,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.21"
+version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f725f340c3854e3cb3ab736dc21f0cca183303acea3b3ffec30f141503ac8eb"
+checksum = "bfd4d1b31faaa3a89d7934dbded3111da0d2ef28e3ebccdb4f0179f5929d1ef1"
 dependencies = [
  "iana-time-zone",
  "js-sys",
@@ -791,12 +791,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0a7ae3ac2f1173085d398531c705756c94a4c56843785df85a60c1a0afac116"
 
 [[package]]
-name = "pkg-config"
-version = "0.3.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
-
-[[package]]
 name = "plotters"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -871,9 +865,9 @@ dependencies = [
 
 [[package]]
 name = "psrdada"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fd452c5eb6a11aff937e73b8df55f0041bd06f28da8340fe298981d680ab9af"
+checksum = "0454e3f2926e08f272bac66000b818e5b5da59a321c817035c172debc0f410ee"
 dependencies = [
  "lending-iterator",
  "nom",
@@ -884,13 +878,12 @@ dependencies = [
 
 [[package]]
 name = "psrdada-sys"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa31aaf71a8805ff13931ce840b092babf11e18f927a0a262cd43ca8488d8b6a"
+checksum = "ed373f8adf33ba4ac939084fa275d731474d08e4b7e5f7b356bfa463f5eb2cde"
 dependencies = [
  "bindgen",
  "cc",
- "pkg-config",
 ]
 
 [[package]]
