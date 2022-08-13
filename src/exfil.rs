@@ -117,6 +117,7 @@ pub fn filterbank_consumer(
     let mut avg_window = [0u16; AVG_WINDOW_SIZE];
     let mut avg = [0u16; CHANNELS];
     let mut avg_cnt = 0usize;
+    let mut fullness_rising_edge = false;
     // Create the file
     let mut file = File::create(format!("grex-{}.fil", heimdall_timestamp(&Utc::now()))).unwrap();
     // Create the filterbank context
@@ -132,8 +133,11 @@ pub fn filterbank_consumer(
     file.write_all(&fb.header_bytes()).unwrap();
     loop {
         // Check fullness and report
-        if fullness(&consumer) >= 0.9 {
+        if fullness(&consumer) >= 0.9 && !fullness_rising_edge {
             warn!("The raw UDP byte ringbuffer is 90% full");
+            fullness_rising_edge = true;
+        } else if fullness(&consumer) < 0.9 && fullness_rising_edge {
+            fullness_rising_edge = false;
         }
         let payload;
         if let Ok(pl) = consumer.pop() {
@@ -200,8 +204,11 @@ pub fn dada_consumer(
         let mut block = data_writer.next().unwrap();
         loop {
             // Check fullness and report
-            if fullness(&consumer) >= 0.9 {
+            if fullness(&consumer) >= 0.9 && !fullness_rising_edge {
                 warn!("The raw UDP byte ringbuffer is 90% full");
+                fullness_rising_edge = true;
+            } else if fullness(&consumer) < 0.9 && fullness_rising_edge {
+                fullness_rising_edge = false;
             }
             // Busy wait until we get data. This will peg the CPU at 100%, but that's ok
             // we don't want to give the time to the kernel with yeild, as that has a 15ms penalty
