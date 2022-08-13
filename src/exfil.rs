@@ -167,6 +167,7 @@ pub fn dada_consumer(
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
 ) {
+    let mut fullness_risinng_edge = false;
     // Containers for parsed spectra
     let mut pol_a = [ComplexByte::default(); CHANNELS];
     let mut pol_b = [ComplexByte::default(); CHANNELS];
