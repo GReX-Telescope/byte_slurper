@@ -121,7 +121,7 @@ pub fn filterbank_consumer(
     let now = Utc::now();
     // Setup the header stuff
     fb.fch1 = Some(1280.06103516); // Start of band + half the step size
-    fb.foff = Some(250.0);
+    fb.foff = Some(250.0 / CHANNELS as f64);
     fb.tsamp = Some(TSAMP as f64);
     fb.tstart = Some(mjd(&now) as f64);
     // Write out the header
