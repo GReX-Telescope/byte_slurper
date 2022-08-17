@@ -1,18 +1,14 @@
 //! This module is responsible for exfilling packet data to heimdall
 
-use std::{
-    collections::HashMap,
-    fs::File,
-    io::{prelude::*, Write},
-};
+use std::{collections::HashMap, fs::File, io::Write};
 
 use byte_slice_cast::AsByteSlice;
 use chrono::{DateTime, Datelike, Timelike, Utc};
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel::Sender;
 use lending_iterator::LendingIterator;
-use psrdada::{builder::DadaClientBuilder, client::DadaClient};
-use sigproc_filterbank::write::{PackSpectra, WriteFilterbank};
-use tracing::{info, warn};
+use psrdada::builder::DadaClientBuilder;
+use sigproc_filterbank::write::WriteFilterbank;
+use tracing::warn;
 
 use crate::{
     capture::{unpack, PayloadBytes},
@@ -32,7 +28,7 @@ pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 // How many of the averaged time slices do we put in the window we're sending to heimdall
 // At stoke time of 65.536, this is a little more than a second
-const NSAMP: usize = 4096;
+const NSAMP: usize = 16384;
 
 /// Convert a chronno DateTime into a heimdall-compatible timestamp string
 fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
@@ -185,8 +181,6 @@ pub fn dada_consumer(
         ("NPOL".to_owned(), "1".to_owned()),
         ("NBIT".to_owned(), "16".to_owned()),
         ("OBS_OFFSET".to_owned(), 0.to_string()),
-        // ("FILE_SIZE".to_owned(), (2 * WINDOW_SIZE).to_string()),
-        // ("HDR_SIZE".to_owned(), 4096.to_string()),
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
         ("UTC_START".to_owned(), heimdall_timestamp(&Utc::now())),
     ]);
