@@ -19,7 +19,6 @@ tracing-subscriber = "0.3"
 log = "0.4"
 ctrlc = "3.2"
 sigproc_filterbank = "0.2"
-hdf5 = "0.8.1"
 
 [dev-dependencies]
 criterion = "0.3"
