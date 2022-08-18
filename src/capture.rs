@@ -19,14 +19,13 @@ pub fn capture_udp(
 ) -> ! {
     loop {
         let mut payload = [0u8; PAYLOAD_SIZE];
-        let packet;
-        if let Ok(pak) = cap.next() {
-            packet = pak;
+        let packet = if let Ok(pak) = cap.next() {
+            pak
         } else {
             // Keep truckin, we don't care!
             warn!("libpcap error");
             continue;
-        }
+        };
         let data = &packet.data[UDP_HEADER_SIZE..];
         // Skip bad packets (we should probably count how often this happens)
         if data.len() != PAYLOAD_SIZE {

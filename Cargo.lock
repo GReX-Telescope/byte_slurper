@@ -110,6 +110,7 @@ dependencies = [
  "criterion",
  "crossbeam-channel",
  "ctrlc",
+ "hifitime",
  "lending-iterator",
  "log",
  "num-traits",
@@ -474,6 +475,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "hifitime"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddfa293cb148cb8596c0c676888eb3a39c263178be021534b5677d4db990616b"
+dependencies = [
+ "num-traits",
+ "regex",
+ "serde",
+ "serde_derive",
 ]
 
 [[package]]

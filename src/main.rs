@@ -41,17 +41,13 @@ fn main() {
     let (producer, consumer) = RingBuffer::new(args.capacity);
 
     // Setup PSRDADA
-    let client_builder = if let Some(key) = args.key {
-        Some(
-            DadaClientBuilder::new(key)
+    let client_builder = args.key.map(|key| {
+        DadaClientBuilder::new(key)
         .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
         .num_bufs(16)
         .num_headers(16)
-        .lock(true),
-        )
-    } else {
-        None
-    };
+        .lock(true)
+    });
 
     // Panic on ctrl
     ctrlc::set_handler(move || {

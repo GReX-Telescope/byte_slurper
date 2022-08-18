@@ -22,12 +22,11 @@ pub fn listen_consumer(rx: Receiver<[u16; CHANNELS]>, port: u16) {
     loop {
         info!("Listen thread waiting for new client");
         // Wait for new connections
-        let mut socket;
-        if let Ok((sock, _)) = listener.accept() {
-            socket = sock;
+        let mut socket = if let Ok((sock, _)) = listener.accept() {
+            sock
         } else {
             continue;
-        }
+        };
         info!("New listen client - starting monitoring");
         loop {
             // Grab next stokes sample and add to avg
