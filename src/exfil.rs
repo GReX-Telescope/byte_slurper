@@ -19,7 +19,7 @@ use crate::{
 // Set by FPGA
 pub const CHANNELS: usize = 2048;
 // How many averages do we take (as the power of 2)
-pub const AVG_SIZE_POW: usize = 3; // 65.536 us
+pub const AVG_SIZE_POW: usize = 5; // ~256us
 const AVG_SIZE: usize = 2usize.pow(AVG_SIZE_POW as u32);
 // How big is the averaging window (elements, not bytes)
 pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
