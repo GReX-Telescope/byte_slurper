@@ -7,7 +7,7 @@ use chrono::{DateTime, Datelike, Timelike, Utc};
 use crossbeam_channel::Sender;
 use hifitime::Epoch;
 use lending_iterator::LendingIterator;
-use psrdada::builder::DadaClientBuilder;
+use psrdada::client::DadaClient;
 use sigproc_filterbank::write::WriteFilterbank;
 use tracing::warn;
 
@@ -28,7 +28,6 @@ pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 // Sample time after averaging
 const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 // How many of the averaged time slices do we put in the window we're sending to heimdall
-// At stoke time of 65.536, this is a little more than a second
 const NSAMP: usize = 16384;
 
 /// Convert a chronno DateTime into a heimdall-compatible timestamp string
@@ -139,8 +138,7 @@ pub fn filterbank_consumer(
 /// This doesn't need to be realtime, because we have cushion from the rtrb.
 /// This function needs to run at less than 8us (on average).
 pub fn dada_consumer(
-    client_builder: DadaClientBuilder,
-    //key: i32,
+    key: i32,
     mut consumer: rtrb::Consumer<PayloadBytes>,
     tcp_sender: Sender<[u16; CHANNELS]>,
 ) {
@@ -165,9 +163,8 @@ pub fn dada_consumer(
         ("TSAMP".to_owned(), (TSAMP * 1e6).to_string()),
         ("UTC_START".to_owned(), heimdall_timestamp(&Utc::now())),
     ]);
-    // Finish building the PSRDADA client on this thread
-    let mut client = client_builder.build().unwrap();
-    // let mut client = DadaClient::new(key).unwrap();
+    // Connect to the PSRDADA buffer on this thread
+    let mut client = DadaClient::new(key).expect("Could not connect to PSRDADA buffer");
     // Grab PSRDADA writing context
     let (mut hc, mut dc) = client.split();
     let mut data_writer = dc.writer();
@@ -207,7 +204,7 @@ pub fn dada_consumer(
                 avg_cnt = 0;
                 // Generate the average from the window and add to the correct position in the output block
                 avg_from_window(&avg_window, AVG_SIZE_POW, &mut avg);
-                // Send this average over to the TCP listender, we don't care if this errors
+                // Send this average over to the TCP listener, we don't care if this errors
                 let _ = tcp_sender.try_send(avg);
                 block.write_all(avg.as_byte_slice()).unwrap();
                 stokes_cnt += 1;

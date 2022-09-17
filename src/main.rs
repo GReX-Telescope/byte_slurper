@@ -1,12 +1,11 @@
 use byte_slurper::{
     args::{convert_filter, Args},
     capture::{capture_udp, PAYLOAD_SIZE},
-    exfil::{dada_consumer, filterbank_consumer, WINDOW_SIZE},
+    exfil::{dada_consumer, filterbank_consumer},
     monitoring::listen_consumer,
 };
 use clap::Parser;
 use crossbeam_channel::bounded;
-use psrdada::builder::DadaClientBuilder;
 use rtrb::RingBuffer;
 
 fn main() {
@@ -40,30 +39,16 @@ fn main() {
     // Create rtrb pairs
     let (producer, consumer) = RingBuffer::new(args.capacity);
 
-    // Setup PSRDADA
-    let client_builder = args.key.map(|key| {
-        DadaClientBuilder::new(key)
-        .buf_size(WINDOW_SIZE as u64 * 2) // We're going to send u16
-        .num_bufs(16)
-        .num_headers(16)
-        .lock(true)
-    });
-
-    // Panic on ctrl
-    ctrlc::set_handler(move || {
-        panic!();
-    })
-    .expect("Error setting Ctrl-C handler");
-
     // Setup the monitoring channel
     let (tcp_s, tcp_r) = bounded(1);
 
     // Spawn the exfil thread
-    if let Some(cb) = client_builder {
-        std::thread::spawn(move || dada_consumer(cb, consumer, tcp_s));
+    if let Some(key) = args.key {
+        std::thread::spawn(move || dada_consumer(key, consumer, tcp_s));
     } else {
         std::thread::spawn(move || filterbank_consumer(consumer, tcp_s));
     }
+
     // Spawn the monitoring thread
     std::thread::spawn(move || listen_consumer(tcp_r, args.listen_port));
 
