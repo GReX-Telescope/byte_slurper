@@ -9,7 +9,7 @@ use hifitime::Epoch;
 use lending_iterator::LendingIterator;
 use psrdada::client::DadaClient;
 use sigproc_filterbank::write::WriteFilterbank;
-use tracing::warn;
+use tracing::{debug, warn};
 
 use crate::{
     capture::{unpack, PayloadBytes},
@@ -106,6 +106,7 @@ pub fn filterbank_consumer(
         avg_cnt += 1;
         if avg_cnt == cc.avgs {
             avg_cnt = 0;
+            debug!("Appending to filterbank file");
             let _ = tcp_sender.try_send(avg.clone());
             // Stream to FB
             file.write_all(&fb.pack(&avg)).unwrap();
@@ -192,6 +193,7 @@ pub fn dada_consumer(
                 stokes_cnt += 1;
                 // If we've filled the window, commit it to PSRDADA
                 if stokes_cnt == cc.samples {
+                    debug!("Commiting window to PSRDADA");
                     // Reset the stokes counter
                     stokes_cnt = 0;
                     // Commit data and update
