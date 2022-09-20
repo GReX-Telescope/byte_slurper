@@ -9,7 +9,7 @@ use hifitime::Epoch;
 use lending_iterator::LendingIterator;
 use psrdada::client::DadaClient;
 use sigproc_filterbank::write::WriteFilterbank;
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 
 use crate::{
     capture::{unpack, PayloadBytes},
