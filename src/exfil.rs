@@ -106,7 +106,6 @@ pub fn filterbank_consumer(
         avg_cnt += 1;
         if avg_cnt == cc.avgs {
             avg_cnt = 0;
-            debug!("Appending to filterbank file");
             let _ = tcp_sender.try_send(avg.clone());
             // Stream to FB
             file.write_all(&fb.pack(&avg)).unwrap();
@@ -153,6 +152,7 @@ pub fn dada_consumer(
     // Write the single header
     // Safety: All these header keys and values are valid
     unsafe { hc.push_header(&header).unwrap() };
+    info!("DADA header pushed, starting main loop");
     // Start the main consumer loop
     loop {
         // Grab the next psrdada block we can write to (BLOCKING)
