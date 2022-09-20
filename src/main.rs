@@ -28,7 +28,7 @@ fn main() {
         .init();
 
     // Print some useful information
-    info!("Starting packet capture!\n Downsample factor: {}\nDownsampled sample time: {}\nChannels: {}\nDADA chunk size: {}\nDADA chunk time: {}", cc.avgs, cc.tsamp(), cc.channels, cc.samples, cc.twindow());
+    info!("Starting packet capture!\nDownsample factor: {}\nDownsampled sample time: {}us\nChannels: {}\nDADA chunk size: {}\nDADA chunk time: {}s", cc.avgs, cc.tsamp()*1e6, cc.channels, cc.samples, cc.twindow());
 
     // Grab the pcap device that matches this interface
     let device = pcap::Device::list()
