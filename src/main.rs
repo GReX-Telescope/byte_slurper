@@ -7,8 +7,8 @@ use byte_slurper::{
 };
 use clap::Parser;
 use crossbeam_channel::bounded;
-use log::info;
 use rtrb::RingBuffer;
+use tracing::info;
 
 fn main() {
     // Parse args
@@ -22,13 +22,13 @@ fn main() {
         cadence: args.cadence,
     };
 
-    // Print some useful information
-    info!("Starting packet capture!\n Downsample factor: {}\nDownsampled sample time: {}\nChannels: {}\nDADA chunk size: {}\nDADA chunk time: {}", cc.avgs, cc.tsamp(), cc.channels, cc.samples, cc.twindow());
-
     // Setup logging
     tracing_subscriber::fmt()
         .with_max_level(convert_filter(args.verbose.log_level_filter()))
         .init();
+
+    // Print some useful information
+    info!("Starting packet capture!\n Downsample factor: {}\nDownsampled sample time: {}\nChannels: {}\nDADA chunk size: {}\nDADA chunk time: {}", cc.avgs, cc.tsamp(), cc.channels, cc.samples, cc.twindow());
 
     // Grab the pcap device that matches this interface
     let device = pcap::Device::list()
