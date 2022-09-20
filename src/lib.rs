@@ -26,4 +26,8 @@ impl CaptureConfig {
     pub fn tsamp(&self) -> f32 {
         self.cadence * self.avgs as f32
     }
+    /// The timespan of one window
+    pub fn twindow(&self) -> f32 {
+        self.tsamp() * self.samples as f32
+    }
 }

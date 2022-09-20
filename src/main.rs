@@ -7,6 +7,7 @@ use byte_slurper::{
 };
 use clap::Parser;
 use crossbeam_channel::bounded;
+use log::info;
 use rtrb::RingBuffer;
 
 fn main() {
@@ -20,6 +21,9 @@ fn main() {
         avgs: args.avgs,
         cadence: args.cadence,
     };
+
+    // Print some useful information
+    info!("Starting packet capture!\n Downsample factor: {}\nDownsampled sample time: {}\nChannels: {}\nDADA chunk size: {}\nDADA chunk time: {}", cc.avgs, cc.tsamp(), cc.channels, cc.samples, cc.twindow());
 
     // Setup logging
     tracing_subscriber::fmt()
