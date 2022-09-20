@@ -19,7 +19,7 @@ use crate::{
 // Set by FPGA
 pub const CHANNELS: usize = 2048;
 // How many averages do we take (as the power of 2)
-pub const AVG_SIZE_POW: usize = 4; // ~128us
+pub const AVG_SIZE_POW: usize = 3; // ~64us
 const AVG_SIZE: usize = 2usize.pow(AVG_SIZE_POW as u32);
 // How big is the averaging window (elements, not bytes)
 pub const AVG_WINDOW_SIZE: usize = AVG_SIZE * CHANNELS;
@@ -28,7 +28,7 @@ pub const WINDOW_SIZE: usize = CHANNELS * NSAMP;
 // Sample time after averaging
 const TSAMP: f32 = 8.192e-6 * AVG_SIZE as f32;
 // How many of the averaged time slices do we put in the window we're sending to heimdall
-const NSAMP: usize = 32768;
+const NSAMP: usize = 65536;
 
 /// Convert a chronno DateTime into a heimdall-compatible timestamp string
 fn heimdall_timestamp(time: &DateTime<Utc>) -> String {
