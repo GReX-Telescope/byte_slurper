@@ -3,6 +3,7 @@ use byte_slurper::{
     capture::{capture_udp, PAYLOAD_SIZE},
     exfil::{dada_consumer, filterbank_consumer},
     monitoring::listen_consumer,
+    CaptureConfig,
 };
 use clap::Parser;
 use crossbeam_channel::bounded;
@@ -11,6 +12,14 @@ use rtrb::RingBuffer;
 fn main() {
     // Parse args
     let args = Args::parse();
+
+    // Build the cap config from the args
+    let cc = CaptureConfig {
+        channels: args.channels,
+        samples: args.samples,
+        avgs: args.avgs,
+        cadence: args.cadence,
+    };
 
     // Setup logging
     tracing_subscriber::fmt()
@@ -44,13 +53,13 @@ fn main() {
 
     // Spawn the exfil thread
     if let Some(key) = args.key {
-        std::thread::spawn(move || dada_consumer(key, consumer, tcp_s));
+        std::thread::spawn(move || dada_consumer(key, consumer, tcp_s, &cc));
     } else {
-        std::thread::spawn(move || filterbank_consumer(consumer, tcp_s));
+        std::thread::spawn(move || filterbank_consumer(consumer, tcp_s, &cc));
     }
 
     // Spawn the monitoring thread
-    std::thread::spawn(move || listen_consumer(tcp_r, args.listen_port));
+    std::thread::spawn(move || listen_consumer(tcp_r, args.listen_port, &cc));
 
     // Startup the main capture thread
     capture_udp(cap, producer);

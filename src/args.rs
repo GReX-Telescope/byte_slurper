@@ -21,8 +21,20 @@ pub struct Args {
     #[clap(value_parser = clap::value_parser!(u16).range(1..))]
     pub listen_port: u16,
     /// Ring buffer capacity
-    #[clap(short, long, default_value_t = 256)]
+    #[clap(short, long, default_value_t = 16384)]
     pub capacity: usize,
+    /// Number of channels
+    #[clap(short, long, default_value_t = 2048)]
+    pub channels: usize,
+    /// Number of samples
+    #[clap(short, long, default_value_t = 65536)]
+    pub samples: usize,
+    /// How many samples to average
+    #[clap(short, long, default_value_t = 4)]
+    pub avgs: usize,
+    /// The cadence (in seconds) we expect the packets to arrive at
+    #[clap(short, long, default_value_t = 8.192e-6)]
+    pub cadence: f32,
     #[clap(flatten)]
     pub verbose: clap_verbosity_flag::Verbosity,
 }

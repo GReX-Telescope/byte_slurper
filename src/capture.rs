@@ -41,11 +41,17 @@ pub fn capture_udp(
 }
 
 /// Unpacks a raw UDP payload into the two polarizations
-pub fn unpack<const N: usize>(
-    payload: &[u8],
-    pol_a: &mut [Complex<i8>; N],
-    pol_b: &mut [Complex<i8>; N],
-) {
+pub fn unpack(payload: &[u8], pol_a: &mut Vec<Complex<i8>>, pol_b: &mut Vec<Complex<i8>>) {
+    assert_eq!(
+        pol_a.len(),
+        payload.len() / WORD_SIZE * 2,
+        "Polarization A container must equal the length of the payload / word size * 2"
+    );
+    assert_eq!(
+        pol_b.len(),
+        payload.len() / WORD_SIZE * 2,
+        "Polarization B container must equal the length of the payload / word size * 2"
+    );
     for (i, word) in payload.chunks_exact(WORD_SIZE).enumerate() {
         // Each word contains two frequencies for each polarization
         // [A1 B1 A2 B2]
@@ -63,9 +69,9 @@ mod tests {
 
     #[test]
     fn test_unpack() {
-        let payload: [u8; 8] = [1, 2, 3, 4, 5, 6, 7, 8];
-        let mut pol_a: [Complex<i8>; 2] = Default::default();
-        let mut pol_b: [Complex<i8>; 2] = Default::default();
+        let payload: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let mut pol_a = vec![Complex { re: 0, im: 0 }; 2];
+        let mut pol_b = vec![Complex { re: 0, im: 0 }; 2];
         unpack(&payload, &mut pol_a, &mut pol_b);
         assert_eq!(pol_a[0], Complex { re: 1i8, im: 2i8 });
         assert_eq!(pol_b[0], Complex { re: 3i8, im: 4i8 });
