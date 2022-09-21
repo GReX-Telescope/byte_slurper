@@ -106,7 +106,7 @@ pub fn filterbank_consumer(
         avg_cnt += 1;
         if avg_cnt == cc.avgs {
             avg_cnt = 0;
-            let _ = tcp_sender.try_send(avg.clone());
+            //let _ = tcp_sender.try_send(avg.clone());
             // Stream to FB
             file.write_all(&fb.pack(&avg)).unwrap();
             // Reset averages
@@ -187,7 +187,7 @@ pub fn dada_consumer(
                 // Write this block
                 block.write_all(avg.as_byte_slice()).unwrap();
                 // Send this average over to the TCP listener, we don't care if this errors
-                let _ = tcp_sender.try_send(avg.clone());
+                // let _ = tcp_sender.try_send(avg.clone());
                 // Reset the averages
                 avg.fill(0.0);
                 stokes_cnt += 1;
