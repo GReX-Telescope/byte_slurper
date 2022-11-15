@@ -201,9 +201,7 @@ pub fn dada_consumer(
                 let payload_offset = (payload_n as f64 * cc.cadence as f64).seconds();
                 let payload_epoch = payload_start + payload_offset;
                 let timestamp_str = heimdall_timestamp(&payload_epoch);
-                header
-                    .insert("UTC_START".to_owned(), timestamp_str)
-                    .unwrap();
+                header.insert("UTC_START".to_owned(), timestamp_str);
                 // Write the single header
                 // Safety: All these header keys and values are valid
                 unsafe { hc.push_header(&header).unwrap() };
