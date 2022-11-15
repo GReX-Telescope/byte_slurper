@@ -19,7 +19,8 @@ tracing-subscriber = "0.3"
 log = "0.4"
 ctrlc = "3.2"
 sigproc_filterbank = "0.2"
-hifitime = "3.3.0"
+hifitime = "3.6"
+casperfpga = {version = "0.1", git = "https://github.com/kiranshila/casperfpga_rs"}
 
 [dev-dependencies]
 criterion = "0.3"

@@ -6,8 +6,11 @@ use crate::complex::Complex;
 
 // FPGA UDP "Word" size (8 bytes as per CASPER docs)
 const WORD_SIZE: usize = 8;
-// 8192 bytes for 1 chunk of 2048 channels
-pub const PAYLOAD_SIZE: usize = 8192;
+// 8192 bytes for 1 chunk of 2048 channels + 8 bytes for the header
+// FIXME: This should be set by capture config
+pub const TIMESTAMP_SIZE: usize = 8;
+pub const SPECTRA_SIZE: usize = 8192;
+pub const PAYLOAD_SIZE: usize = SPECTRA_SIZE + TIMESTAMP_SIZE;
 // UDP Header size (spec-defined)
 const UDP_HEADER_SIZE: usize = 42;
 
@@ -41,18 +44,26 @@ pub fn capture_udp(
 }
 
 /// Unpacks a raw UDP payload into the two polarizations
-pub fn unpack(payload: &[u8], pol_a: &mut Vec<Complex<i8>>, pol_b: &mut Vec<Complex<i8>>) {
+pub fn unpack(
+    payload: &[u8],
+    pol_a: &mut Vec<Complex<i8>>,
+    pol_b: &mut Vec<Complex<i8>>,
+    payload_n: &mut u64,
+) {
     assert_eq!(
         pol_a.len(),
-        payload.len() / WORD_SIZE * 2,
-        "Polarization A container must equal the length of the payload / word size * 2"
+        (payload.len() - TIMESTAMP_SIZE) / WORD_SIZE * 2,
+        "Polarization A container must equal the length of the spectra payload / word size * 2"
     );
     assert_eq!(
         pol_b.len(),
-        payload.len() / WORD_SIZE * 2,
-        "Polarization B container must equal the length of the payload / word size * 2"
+        (payload.len() - TIMESTAMP_SIZE) / WORD_SIZE * 2,
+        "Polarization B container must equal the length of the spectra payload / word size * 2"
     );
-    for (i, word) in payload.chunks_exact(WORD_SIZE).enumerate() {
+    for (i, word) in payload[TIMESTAMP_SIZE..]
+        .chunks_exact(WORD_SIZE)
+        .enumerate()
+    {
         // Each word contains two frequencies for each polarization
         // [A1 B1 A2 B2]
         // Where each channel is [Re Im] as FixedI8<7>
@@ -61,6 +72,12 @@ pub fn unpack(payload: &[u8], pol_a: &mut Vec<Complex<i8>>, pol_b: &mut Vec<Comp
         pol_b[2 * i] = Complex::new(word[2] as i8, word[3] as i8);
         pol_b[2 * i + 1] = Complex::new(word[6] as i8, word[7] as i8);
     }
+    // Then unpack the timestamp/order
+    *payload_n = u64::from_be_bytes(
+        payload[0..TIMESTAMP_SIZE]
+            .try_into()
+            .expect("This is exactly 8 bytes"),
+    );
 }
 
 #[cfg(test)]
@@ -69,13 +86,15 @@ mod tests {
 
     #[test]
     fn test_unpack() {
-        let payload: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let payload: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8];
         let mut pol_a = vec![Complex { re: 0, im: 0 }; 2];
         let mut pol_b = vec![Complex { re: 0, im: 0 }; 2];
-        unpack(&payload, &mut pol_a, &mut pol_b);
+        let mut payload_n = 0;
+        unpack(&payload, &mut pol_a, &mut pol_b, &mut payload_n);
         assert_eq!(pol_a[0], Complex { re: 1i8, im: 2i8 });
         assert_eq!(pol_b[0], Complex { re: 3i8, im: 4i8 });
         assert_eq!(pol_a[1], Complex { re: 5i8, im: 6i8 });
         assert_eq!(pol_b[1], Complex { re: 7i8, im: 8i8 });
+        assert_eq!(payload_n, 1);
     }
 }

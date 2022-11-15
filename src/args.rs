@@ -1,5 +1,7 @@
 //! Argument parsing for running from the command line
 
+use std::net::SocketAddr;
+
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -12,6 +14,9 @@ pub struct Args {
     /// Network device to capture packets from (MTU must be set to 9000)
     #[clap(short, long)]
     pub device_name: String,
+    /// The ip and socket address of the SNAP board
+    #[clap(long)]
+    pub fpga_addr: SocketAddr,
     /// Port to capture UDP data from
     #[clap(short, long, default_value_t = 60000)]
     #[clap(value_parser = clap::value_parser!(u16).range(1..))]

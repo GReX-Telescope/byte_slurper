@@ -10,7 +10,7 @@ use rand::prelude::*;
 fn benchmark(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
-    let mut dummy_payload = [0u8; 8192];
+    let mut dummy_payload = [0u8; 8200];
     rng.fill(&mut dummy_payload[..]);
 
     let cc = CaptureConfig {
@@ -23,6 +23,7 @@ fn benchmark(c: &mut Criterion) {
     // Containers
     let mut pol_a = vec![ComplexByte::default(); cc.channels];
     let mut pol_b = vec![ComplexByte::default(); cc.channels];
+    let mut payload_n = 0u64;
     let mut avg = vec![0f32; cc.channels];
 
     c.bench_function("payload unpacking", |b| {
@@ -31,6 +32,7 @@ fn benchmark(c: &mut Criterion) {
                 black_box(&dummy_payload),
                 black_box(&mut pol_a),
                 black_box(&mut pol_b),
+                black_box(&mut payload_n),
             )
         })
     });

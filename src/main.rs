@@ -5,8 +5,10 @@ use byte_slurper::{
     monitoring::listen_consumer,
     CaptureConfig,
 };
+use casperfpga::transport::{tapcp::Tapcp, Transport};
 use clap::Parser;
 use crossbeam_channel::bounded;
+use hifitime::Epoch;
 use rtrb::RingBuffer;
 use tracing::info;
 
@@ -55,11 +57,24 @@ fn main() {
     // Setup the monitoring channel
     let (tcp_s, tcp_r) = bounded(1);
 
+    // Signal the FPGA to start on the next rising PPS edge
+    let mut transport = Tapcp::connect(args.fpga_addr).expect("UDP Connection to the FPGA failed");
+    assert!(
+        transport.is_running().unwrap(),
+        "SNAP board is not programmed/running"
+    );
+    transport.write("master_rst", 0, &1u8).unwrap();
+    transport.write("master_rst", 0, &0u8).unwrap();
+    // FIXME, actually time this
+    let payload_start = Epoch::now().unwrap();
+    transport.write("pps_trig", 0, &1u8).unwrap();
+    transport.write("pps_trig", 0, &0u8).unwrap();
+
     // Spawn the exfil thread
     if let Some(key) = args.key {
-        std::thread::spawn(move || dada_consumer(key, consumer, tcp_s, &cc));
+        std::thread::spawn(move || dada_consumer(key, consumer, tcp_s, &cc, payload_start));
     } else {
-        std::thread::spawn(move || filterbank_consumer(consumer, tcp_s, &cc));
+        std::thread::spawn(move || filterbank_consumer(consumer, tcp_s, &cc, payload_start));
     }
 
     // Spawn the monitoring thread
