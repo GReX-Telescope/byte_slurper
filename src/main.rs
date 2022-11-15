@@ -63,12 +63,13 @@ fn main() {
         transport.is_running().unwrap(),
         "SNAP board is not programmed/running"
     );
-    transport.write("master_rst", 0, &1u8).unwrap();
-    transport.write("master_rst", 0, &0u8).unwrap();
+    // FIXME replace 32 bit word with bool
+    transport.write("master_rst", 0, &1u32).unwrap();
+    transport.write("master_rst", 0, &0u32).unwrap();
     // FIXME, actually time this
     let payload_start = Epoch::now().unwrap();
-    transport.write("pps_trig", 0, &1u8).unwrap();
-    transport.write("pps_trig", 0, &0u8).unwrap();
+    transport.write("pps_trig", 0, &1u32).unwrap();
+    transport.write("pps_trig", 0, &0u32).unwrap();
 
     // Spawn the exfil thread
     if let Some(key) = args.key {
